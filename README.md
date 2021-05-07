@@ -5,6 +5,9 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 ## Documentation on the joutney
 [CodiMD](https://codimd.web.cern.ch/UCT5cM_yTsWqM79VLiGnbw?view)
 
+## Explained .yaml file
+[Argo workflow explained](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/coinflip.yaml)
+
 ## Coinflip
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/coinflip.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/coinflip.yaml)
