@@ -15,3 +15,11 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 ## Coinflip recursive
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/coinflip-recursive.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/coinflip-recursive.yaml)
+
+## Dag-diamond-steps
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/dag-diamond-steps.py)
+- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/dag-diamond-steps.yaml)
+
+## Hello world
+- [Couler-version]()
+- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/hello-world.yaml)
