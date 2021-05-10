@@ -24,6 +24,4 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/helloworld.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/hello-world.yaml)
 
-## Gifs - not started yet
-- [Couler-version]()
-- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/fun-with-gifs.yaml)
+
