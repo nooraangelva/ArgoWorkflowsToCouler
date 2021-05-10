@@ -34,12 +34,7 @@ def echo_trice(message):
    
 
 def echo(message):
-    couler.run_container(
-        image="alpine:3.6",
-        command=["echo"],
-        args=[message],
-        step_name="echo",
-    )
+    print(message)
 
 def diamond():
     couler.dag(
