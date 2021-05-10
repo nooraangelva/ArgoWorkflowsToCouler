@@ -26,15 +26,20 @@ from couler.argo_submitter import ArgoSubmitter
 
 
 def echo_trice(message):
-    i = 1
-    while i <4:
-        message = message + str(i)
+    i = 0
+    while i <3:
         i = i+ 1
-        echo(message)
-   
+        echo(message + str(i))
+        
+def echo(name):
+    couler.run_container(
+        image="docker/whalesay:latest",
+        command=["cowsay"],
+        args=[name],
+        step_name=name,
+    )
 
-def echo(message):
-    print(message)
+    
 
 def diamond():
     couler.dag(
