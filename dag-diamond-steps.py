@@ -1,5 +1,3 @@
-# The following workflow executes a diamond workflow, with each
-# node comprising of three parallel fan-in fan-out steps.
 # 
 #           X
 #         / | \
