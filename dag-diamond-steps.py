@@ -25,30 +25,59 @@ import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 
 
-def echo_trice(message):
-    i = 0
-    while i <3:
-        i = i+ 1
-        echo(message + str(i))
-        
-def echo(name):
+def job_a(message):
     couler.run_container(
         image="docker/whalesay:latest",
         command=["cowsay"],
-        args=[name],
-        step_name=name,
+        args=[message],
+        step_name="A",
     )
 
-    
 
+def job_b(message):
+    couler.run_container(
+        image="docker/whalesay:latest",
+        command=["cowsay"],
+        args=[message],
+        step_name=message,
+    )
+
+
+def job_c(message):
+    couler.run_container(
+        image="docker/whalesay:latest",
+        command=["cowsay"],
+        args=[message],
+        step_name="B",
+    )
+
+
+def job_d(message):
+    couler.run_container(
+        image="docker/whalesay:latest",
+        command=["cowsay"],
+        args=[message],
+        step_name="D",
+    )
+
+
+#           *
+#         / | \
+#       A1 A2  A3
+#         \ | /
+#           *
+#   
 def diamond():
     couler.dag(
         [
-            [lambda: echo_trice(message="A")],
-            [lambda: echo_trice(message="A"), lambda: echo_trice(message="B")],  # A -> B
-            [lambda: echo_trice(message="A"), lambda: echo_trice(message="C")],  # A -> C
-            [lambda: echo_trice(message="B"), lambda: echo_trice(message="D")],  # B -> D
-            [lambda: echo_trice(message="C"), lambda: echo_trice(message="D")],  # C -> D
+            [lambda: job_a(message="*")],
+            [lambda: job_a(message="*"), lambda: job_b(message="A1")],  # A -> B
+            [lambda: job_a(message="*"), lambda: job_b(message="A2")],  # A -> C
+            [lambda: job_a(message="*"), lambda: job_b(message="A3")],  # B -> D
+            [lambda: job_b(message="A1"), lambda: job_c(message="*")],  # C -> D
+            [lambda: job_b(message="A1"), lambda: job_c(message="*")],  # C -> D
+            [lambda: job_b(message="A2"), lambda: job_c(message="*")],  # C -> D
+            [lambda: job_b(message="A3"), lambda: job_c(message="*")],  # C -> D
         ]
     )
 
