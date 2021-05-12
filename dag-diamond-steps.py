@@ -25,7 +25,7 @@ from couler.argo_submitter import ArgoSubmitter
 def job_x(message):
     couler.run_container(
         image="alpine:3.6", 
-        command=["sh", "-c", 'echo "X"'],
+        command=["sh", "-c", 'echo "'+message+'"'],
         args=[message],
         step_name=message,
     )
@@ -34,7 +34,7 @@ def job_x(message):
 def job_a(message):
     couler.run_container(
         image="alpine:3.6", 
-        command=["sh", "-c", 'echo "A"'],
+        command=["sh", "-c", 'echo "'+message+'"'],
         args=[message],
         step_name=message,
     )
@@ -43,7 +43,7 @@ def job_a(message):
 def job_b(message):
     couler.run_container(
         image="alpine:3.6", 
-        command=["sh", "-c", 'echo "B"'],
+        command=["sh", "-c", 'echo "'+message+'"'],
         args=[message],
         step_name=message,
     )
@@ -52,7 +52,7 @@ def job_b(message):
 def job_c(message):
     couler.run_container(
         image="alpine:3.6", 
-        command=["sh", "-c", 'echo "C"'],
+        command=["sh", "-c", 'echo "'+message+'"'],
         args=[message],
         step_name=message,
     )
@@ -60,12 +60,12 @@ def job_c(message):
 def job_d(message):
     couler.run_container(
         image="alpine:3.6", 
-        command=["sh", "-c", 'echo "D"'],
+        command=["sh", "-c", 'echo "'+message+'"'],
         args=[message],
         step_name=message,
     )
 
-#Diamond2 - odd errors
+#Diamond2 - odd errors - but works now
 def depen(message):
     listan = [1,2,3]
     dlista = list(())
