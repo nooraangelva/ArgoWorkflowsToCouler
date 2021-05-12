@@ -18,8 +18,6 @@
 #       D1 D2  D3
 #         \ | /
 #           X8
-# Gives an erro at first but when you press retry in Argo works well
-# using diamond2 not diamond in workflow
 
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
@@ -131,7 +129,7 @@ def diamond2(): #odd errors
     #couler.set_dependencies(lambda: job_a(message="A2"), dependencies="X1")
     #couler.set_dependencies(lambda: job_a(message="A3"), dependencies="X1")
     depe = depen(message="A")
-    print(depe)
+    #print(depe)
     couler.set_dependencies(lambda: job_x(message="X2"), dependencies=depe) #Error: Nonetype? Even though it's a list
     couler.set_dependencies(lambda: job_x(message="X3"), dependencies="X2") #accepts lists too
     couler.set_dependencies(lambda: job_x(message="X4"), dependencies="X2")
@@ -141,14 +139,14 @@ def diamond2(): #odd errors
     #couler.set_dependencies(lambda: job_b(message="B2"), dependencies="X3")
     #couler.set_dependencies(lambda: job_b(message="B3"), dependencies="X3")
     depe2 = depen(message="B")
-    print(depe2)
+    #print(depe2)
     couler.set_dependencies(lambda: job_x(message="X5"), dependencies=depe2)
     couler.set_dependencies(lambda: job(message="C"), dependencies="X4")
     #couler.set_dependencies(lambda: job_c(message="C1"), dependencies="X4")
     #couler.set_dependencies(lambda: job_c(message="C2"), dependencies="X4")
     #couler.set_dependencies(lambda: job_c(message="C3"), dependencies="X4")
     depe3 = depen(message="C")
-    print(depe3)
+    #print(depe3)
     couler.set_dependencies(lambda: job_b(message="X6"), dependencies=depe3)
     couler.set_dependencies(lambda: job_b(message="X7"), dependencies=["X6","X5"])
     couler.set_dependencies(lambda: job(message="D"), dependencies="X7")
@@ -156,7 +154,7 @@ def diamond2(): #odd errors
     #couler.set_dependencies(lambda: job_d(message="D2"), dependencies="X7")
     #couler.set_dependencies(lambda: job_d(message="D3"), dependencies="X7")
     depe4 = depen(message="D")
-    print(depe4)
+    #print(depe4)
     couler.set_dependencies(lambda: job_d(message="X8"), dependencies=depe4)
 
 
