@@ -28,6 +28,3 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/conditionals.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/conditionals.yaml)
 
-## Giff
-- [Couler-version]()
-- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/fun-with-gifs.yaml)
