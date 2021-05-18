@@ -1,33 +1,129 @@
-# https://github.com/argoproj/argo-workflows/blob/master/examples/coinflip-recursive.yaml
-#coinflip-recursive is a variation of the coinflip example.
-# This is an example of a dynamic workflow which extends
-# indefinitely until it acheives a desired result. In this
-# example, the 'flip-coin' step is recursively repeated until
-# the result of the step is "heads".
+# 
+#           X1
+#         / | \
+#       A1 A2  A3
+#         \ | /
+#           X2
+#         /   \ 
+#       /       \
+#      X3         X4
+#    / | \     / | \
+#  B1  B2 B3  C1 C2 C3
+#    \ | /     \ | /
+#      X5         X6
+#       \       /
+#         \   /
+#           X7
+#         / | \
+#       D1 D2  D3
+#         \ | /
+#           X8
+
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 
-def random_code():
-    import random
-
-    res = "heads" if random.randint(0, 1) == 0 else "tails"
-    print(res)
-
-def flip_coin():
-    result = "tails"
-    while result == "tails":
-        result = couler.run_script(image="python:alpine3.6", source=random_code)
-    return result
-    
-
-def heads():
-    return couler.run_container(
-        image="alpine:3.6", command=["sh", "-c", 'echo "it was heads"']
+def job_x(message):
+    couler.run_container(
+        image="alpine:3.6", 
+        command=["sh", "-c", 'echo "'+message+'"'],
+        args=[message],
+        step_name=message,
     )
 
 
-resultHeads = flip_coin()
-couler.when(couler.equal(resultHeads, "heads"), lambda: heads())
-print("heads")
-submitter = ArgoSubmitter()
+def job_a(message):
+    couler.run_container(
+        image="alpine:3.6", 
+        command=["sh", "-c", 'echo "A'+str(message)+'"'],
+        args=["A"+str(message)],
+        step_name="A"+str(message),
+    )
+    return message
+
+def job_b(message):
+    couler.run_container(
+        image="alpine:3.6", 
+        command=["sh", "-c", 'echo "B'+str(message)+'"'],
+        args=["B"+str(message)],
+        step_name="B"+str(message),
+    )
+
+
+def job_c(message):
+    couler.run_container(
+        image="alpine:3.6", 
+        command=["sh", "-c", 'echo "C'+str(message)+'"'],
+        args=["C"+str(message)],
+        step_name="C"+str(message),
+    )
+
+def job_d(message):
+    couler.run_container(
+        image="alpine:3.6", 
+        command=["sh", "-c", 'echo "D'+str(message)+'"'],
+        args=["D"+str(message)],
+        step_name="D"+str(message),
+    )
+
+
+def listCreation(message, lista):
+    '''Creates the dependencies in a list format'''
+    dependencies_list = []
+    for x in lista:
+        dependencies_list.append(message+str(x))
+    return dependencies_list
+
+    
+
+def diamond(pituus):
+    '''main function (the brains) creates dependencies and calls functions '''
+    lista = []
+    i = 1
+    while i <= pituus:
+        lista.append(i)
+        i += 1
+
+    couler.set_dependencies(lambda: job_x(message="X1"), dependencies=None)
+    for x in lista:
+      couler.set_dependencies(lambda: job_a(message=x), dependencies=["X1"])
+    #couler.set_dependencies(lambda: job_a(message="A1"), dependencies=["X1"])
+    #couler.set_dependencies(lambda: job_a(message="A2"), dependencies=["X1"])
+    #couler.set_dependencies(lambda: job_a(message="A3"), dependencies=["X1"])
+    depe = listCreation(message="A", lista=lista)
+    #print(depe)
+    
+    couler.set_dependencies(lambda: job_x(message="X2"), dependencies=depe)
+    couler.set_dependencies(lambda: job_x(message="X3"), dependencies=["X2"])
+    couler.set_dependencies(lambda: job_x(message="X4"), dependencies=["X2"])
+
+    for x in lista:
+        couler.set_dependencies(lambda: job_b(message=x), dependencies=["X3"])
+    #couler.set_dependencies(lambda: job_b(message="B1"), dependencies=["X3"])
+    #couler.set_dependencies(lambda: job_b(message="B2"), dependencies=["X3"])
+    #couler.set_dependencies(lambda: job_b(message="B3"), dependencies=["X3"])
+    depe2 = listCreation(message="B", lista=lista)
+    #print(depe2)
+    couler.set_dependencies(lambda: job_x(message="X5"), dependencies=depe2)
+
+    for x in lista:
+        couler.set_dependencies(lambda: job_c(message=x), dependencies=["X4"])
+    #couler.set_dependencies(lambda: job_c(message="C1"), dependencies=["X4"])
+    #couler.set_dependencies(lambda: job_c(message="C2"), dependencies=["X4"])
+    #couler.set_dependencies(lambda: job_c(message="C3"), dependencies=["X4"])
+    depe3 = listCreation(message="C", lista=lista)
+    #print(depe3)
+    couler.set_dependencies(lambda: job_x(message="X6"), dependencies=depe3)
+    couler.set_dependencies(lambda: job_x(message="X7"), dependencies=["X6","X5"])
+    for x in lista:
+        couler.set_dependencies(lambda: job_d(message=x), dependencies=["X7"])
+    #couler.set_dependencies(lambda: job_d(message="D1"), dependencies=["X7"])
+    #couler.set_dependencies(lambda: job_d(message="D2"), dependencies=["X7"])
+    #couler.set_dependencies(lambda: job_d(message="D3"), dependencies=["X7"])
+    depe4 = listCreation(message="D", lista=lista)
+    #print(depe4)
+    couler.set_dependencies(lambda: job_x(message="X8"), dependencies=depe4)
+
+
+diamond(pituus=3)
+submitter = ArgoSubmitter(namespace="argo")
 couler.run(submitter=submitter)
