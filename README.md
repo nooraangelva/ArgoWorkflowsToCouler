@@ -28,3 +28,6 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/conditionals.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/conditionals.yaml)
 
+## Exit handler
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/exit_handler_test.py) (removed the send email step)
+- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/exit-handlers.yaml)
