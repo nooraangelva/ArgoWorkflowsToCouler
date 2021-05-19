@@ -31,3 +31,8 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 ## Exit handler
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/exit_handler_test.py) (removed the send email step)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/exit-handlers.yaml)
+
+## Volumes
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/volumes.py) (in progress)
+- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/volumes-pvc.yaml)
+
