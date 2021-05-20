@@ -23,7 +23,7 @@ def print_message(volume_mount):
     couler.run_container(
         image="alpine:latest",
         args=["echo getting message from volume; cat /mnt/vol/hello_world.txt"],
-        command=["sh", "-c"],
+        command=["sh", "-c"+volume_mount],
         step_name="print",
         volume_mounts=[volume_mount],
     )
@@ -35,8 +35,8 @@ def volumes_pvc_example():
     volume = VolumeClaimTemplate("workdir")
     create_workflow_volume(volume)
     volume_mount = VolumeMount("workdir", "/mnt/vol")
-    couler.set_dependencies(lambda: whalesay(volume_mount=volume_mount), dependencies=None)
-    couler.set_dependencies(lambda: print_message(volume_mount=volume_mount), dependencies=["generate"])
+    whalesay(volume_mount=volume_mount)
+    print_message(volume_mount=volume_mount)
     
     
 
