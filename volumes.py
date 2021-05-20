@@ -31,8 +31,8 @@ def print_message(volume_mount):
 
 def volumes_pvc_example():
     '''creates volume and executes containers by calling functions'''
-    volume2 = VolumeClaimTemplate("workdir")
-    create_workflow_volume(volume2)
+    volume = VolumeClaimTemplate("workdir")
+    create_workflow_volume(volume)
     volume_mount = VolumeMount("workdir", "/mnt/vol")
     couler.set_dependencies(lambda: whalesay(volume_mount=volume_mount), dependencies=None)
     couler.set_dependencies(lambda: print_message(volume_mount=volume_mount), dependencies=["generate"])
