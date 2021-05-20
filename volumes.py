@@ -11,7 +11,7 @@ def whalesay(volume_mount):
     '''creates a hello_world.txt file'''
     couler.run_container(
         image="docker/whalesay:latest",
-        args=["echo generating message in volume; cowsay hello world | tee /mnt/vol/hello_world.txt; echo generated message in volume; ls /mnt/vol; cat /mnt/vol/hello_world.txt"],
+        args=["ls /mnt/; echo generating message in volume; cowsay hello world | tee /mnt/vol/hello_world.txt; echo generated message in volume; ls /mnt/vol; cat /mnt/vol/hello_world.txt"],
         command=["sh", "-c"],
         step_name="generate",
         volume_mounts=[volume_mount],
