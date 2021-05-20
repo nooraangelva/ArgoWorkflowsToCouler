@@ -23,7 +23,7 @@ def print_message(volume_mount):
     couler.run_container(
         image="alpine:latest",
         args=["echo getting message from volume; cat /mnt/vol/hello_world.txt"],
-        command=["sh", "-c"+volume_mount],
+        command=["sh", "-c"],
         step_name="print",
         volume_mounts=[volume_mount],
     )
