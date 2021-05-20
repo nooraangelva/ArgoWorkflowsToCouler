@@ -36,3 +36,6 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/volumes.py) (in progress)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/volumes-pvc.yaml)
 
+## Daemon
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/daemon.py) (in progress)
+- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/daemon-nginx.yaml)
