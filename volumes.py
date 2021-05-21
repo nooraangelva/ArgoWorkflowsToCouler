@@ -1,5 +1,6 @@
 # creates a hello_world.txt file with volumes and then opens it.
-# problems with print_message() it can't find the file even if whalesay() finds it after creating.
+# https://github.com/couler-proj/couler/issues/193 had the same issue
+# Solution, sense it has not been yet officaly published: https://github.com/couler-proj/couler/issues/193#issuecomment-843550006
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 from couler.core.templates.volume import VolumeMount, Volume
@@ -11,7 +12,7 @@ def whalesay(volume_mount):
     '''creates a hello_world.txt file'''
     couler.run_container(
         image="docker/whalesay:latest",
-        args=["ls /mnt/; echo generating message in volume; cowsay hello world | tee /mnt/vol/hello_world.txt; echo generated message in volume; ls /mnt/vol; cat /mnt/vol/hello_world.txt"],
+        args=["ls /mnt/; echo generating message in volume; cowsay hello world | tee /mnt/vol/hello_world.txt; echo generated message in volume; ls /mnt/vol;"],
         command=["sh", "-c"],
         step_name="generate",
         volume_mounts=[volume_mount],
