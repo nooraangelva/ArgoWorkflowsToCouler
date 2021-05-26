@@ -33,9 +33,9 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/exit-handlers.yaml)
 
 ## Volumes
-- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/volumes.py) (in progress)
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/volumes.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/volumes-pvc.yaml)
 
-## Daemon
-- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/daemon.py) (in progress)
-- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/daemon-nginx.yaml)
+## Map
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/map.py) (Removed dependencies sense couler.map() doesn't work with it)
+- [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/dag-diamond-steps.yaml)
