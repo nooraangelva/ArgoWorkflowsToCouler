@@ -37,5 +37,5 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/volumes-pvc.yaml)
 
 ## Map
-- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/map.py) (Removed dependencies sense couler.map() doesn't work with it)
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/map.py) (Basic example of usage)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/dag-diamond-steps.yaml)
