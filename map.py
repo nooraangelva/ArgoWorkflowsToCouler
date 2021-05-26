@@ -17,9 +17,9 @@ def map_diamond():
     '''main function (the brains) calls function echo_trice and sends lists to function'''
     
     test_paras = ["t1", "t2", "t3"]
-    couler.map(lambda x: consume(x), test_paras)
+    #couler.map(lambda x: consume(x), test_paras)
 
-   
+    couler.map(lambda x: couler.run_container(image="docker/whalesay:latest", command=["cowsay"], args=[x], ) , test_paras)
 
 map_diamond()
 
