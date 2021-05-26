@@ -2,7 +2,8 @@
 #           *
 #         / | \
 #       x   x  x
-
+#         \ | /
+#           *
 
 
 from couler.core.syntax.loop import map
@@ -20,11 +21,11 @@ def echo(message):
 
 def map_diamond():
     '''main function (the brains) calls function echo_trice and sends lists to function'''
-    
-    lista_a=["A1","A2","A3"]
-    lista_b=["B1","B2","B3"]
-    lista_c=["C1","C2","C3"]
-    lista_d=["D1","D2","D3"]
+
+    lista_a=["A","A","A"]
+    lista_b=["B","B","B"]
+    lista_c=["C","C","C"]
+    lista_d=["D","D","D"]
 
     echo_trice(lista=lista_a)
     echo_trice(lista=lista_b)
