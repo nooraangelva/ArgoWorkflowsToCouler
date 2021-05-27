@@ -10,16 +10,27 @@ import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 
 def echo_trice(lista):
-     couler.map(lambda x: echo(x), lista)
+
+    couler.map(lambda x: echo_a(x), lista)
 
 def echo_a(message):
     return couler.run_container(
-        image="docker/whalesay:latest", command=["cowsay"], args=["A"], step_name=message,
+        image="docker/whalesay:latest", command=["cowsay"], args=[message], step_name="A",
     )
 
 def echo_b(message):
     return couler.run_container(
-        image="docker/whalesay:latest", command=["cowsay"], args=["B"], step_name=message,
+        image="docker/whalesay:latest", command=["cowsay"], args=[message], step_name="B",
+    )
+
+def echo_c(message):
+    return couler.run_container(
+        image="docker/whalesay:latest", command=["cowsay"], args=[message], step_name="C",
+    )
+
+def echo_d(message):
+    return couler.run_container(
+        image="docker/whalesay:latest", command=["cowsay"], args=[message], step_name="D",
     )
 
 def map_diamond():
@@ -30,10 +41,10 @@ def map_diamond():
     lista_c=["C1","C2","C3"]
     lista_d=["D1","D2","D3"]
 
-    couler.set_dependencies(lambda: echo_trice(lista=lista_a), dependencies=None)
-    couler.set_dependencies(lambda: echo_trice(lista=lista_b), dependencies=["A"])
-    #couler.set_dependencies(lambda: echo_trice(lista=lista_c), dependencies=["A"])
-    #couler.set_dependencies(lambda: echo_trice(lista=lista_d), dependencies=["B","C"])
+    couler.set_dependencies(lambda: couler.map(lambda x: echo_a(x), lista_a), dependencies=None)
+    couler.set_dependencies(lambda: couler.map(lambda x: echo_b(x), lista_b), dependencies=["A"])
+    couler.set_dependencies(lambda: couler.map(lambda x: echo_c(x), lista_c), dependencies=["A"])
+    couler.set_dependencies(lambda: couler.map(lambda x: echo_d(x), lista_d), dependencies=["B","C"])
 
 map_diamond()
 
