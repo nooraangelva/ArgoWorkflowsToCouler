@@ -1,10 +1,25 @@
-# using map function
+#  The following workflow executes a diamond workflow, with each
+# node comprising of three parallel fan-in fan-out steps.
+# 
 #           *
 #         / | \
 #       A1 A2  A3
 #         \ | /
 #           *
-
+#         /   \ 
+#       /       \
+#      *         *
+#    / | \     / | \
+#  B1  B2 B3  C1 C2 C3
+#    \ | /     \ | /
+#      *         *
+#       \       /
+#         \   /
+#           *
+#         / | \
+#       D1 D2  D3
+#         \ | /
+#           *
 from couler.core.syntax.loop import map
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
