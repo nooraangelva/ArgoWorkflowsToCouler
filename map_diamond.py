@@ -9,9 +9,7 @@ from couler.core.syntax.loop import map
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 
-def echo_trice(lista):
 
-    couler.map(lambda x: echo_a(x), lista)
 
 def echo_a(message):
     return couler.run_container(
