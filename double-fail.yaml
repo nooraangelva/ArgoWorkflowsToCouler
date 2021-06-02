@@ -1,0 +1,56 @@
+# Example on continue-on-fail, where the workflow will continue running even
+# some steps fail.
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: continue-on-fail-
+spec:
+  entrypoint: workflow-ignore
+  onExit: exit-handler
+  parallelism: 1
+  templates:
+  - name: workflow-ignore
+    steps:
+    - - name: A
+        template: whalesay
+    - - name: B
+        template: intentional-fail
+        continueOn:
+          failed: true
+    - - name: C
+        template: intentional-fail
+    - - name: D
+        template: whalesay
+
+  - name: exit-handler
+    steps:
+    - - name: celebrate
+        template: celebrate
+        when: "{{workflow.status}} == Succeeded"
+    - - name: cry
+        template: cry
+        when: "{{workflow.status}} != Succeeded"
+
+  - name: whalesay
+    container:
+      image: docker/whalesay:latest
+      command: [cowsay]
+      args: ["hello world"]
+
+  - name: intentional-fail
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo intentional failure; exit 1"]
+
+  - name: celebrate
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo hooray!"]
+
+  - name: cry
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo boohoo!"]
