@@ -16,19 +16,14 @@ spec:
     - - name: B
         template: intentional-fail
         continueOn:
-          failed: true
-    - - name: C
-        template: intentional-fail
+          failed: false
     - - name: D
         template: whalesay
 
   - name: exit-handler
     steps:
-    - - name: celebrate
-        template: celebrate
-        when: "{{workflow.status}} == Succeeded"
-    - - name: cry
-        template: cry
+    - - name: suspend
+        template: suspend
         when: "{{workflow.status}} != Succeeded"
 
   - name: whalesay
@@ -43,14 +38,5 @@ spec:
       command: [sh, -c]
       args: ["echo intentional failure; exit 1"]
 
-  - name: celebrate
-    container:
-      image: alpine:latest
-      command: [sh, -c]
-      args: ["echo hooray!"]
-
-  - name: cry
-    container:
-      image: alpine:latest
-      command: [sh, -c]
-      args: ["echo boohoo!"]
+  - name: suspend
+    suspend: {}
