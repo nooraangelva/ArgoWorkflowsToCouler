@@ -39,3 +39,8 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 ## Map
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/map.py) (Basic example of usage)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/dag-diamond-steps.yaml)
+
+## Getting a file and sorting it
+[Task](https://github.com/cms-dpoa/cms-dpoa-getting-started/issues/78)
+- [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/file_retrieval.py)
+- 
