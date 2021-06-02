@@ -8,6 +8,9 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 ## Explained .yaml file
 [Argo workflow explained](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/coinflip.yaml)
 
+## Double-fail.yaml file
+[Argo workflow explained](https://github.com/argoproj/argo-workflows/blob/master/examples/double-fail.yaml)
+
 ## Coinflip
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/coinflip.py)
 - [Argo-version](https://github.com/argoproj/argo-workflows/blob/master/examples/coinflip.yaml)
