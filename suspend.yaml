@@ -15,8 +15,6 @@ spec:
     - - name: B
         template: intentional-fail
         onExit: exit-handler
-        continueOn:
-          failed: true
     - - name: D
         template: whalesay
 
@@ -25,6 +23,9 @@ spec:
     - - name: suspend
         template: suspend
         when: "{{workflow.status}} != Succeeded"
+    - - name: D
+        template: whalesay
+
 
   - name: whalesay
     container:
