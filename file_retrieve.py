@@ -83,7 +83,7 @@ def opendata(id):
 
     retrieve(volume_mount=volume_mount,id=id)
     couler.run_script(
-        image="adreeve/python-numpy", 
+        image="adreeve/python-numpy", #using this image instead of python:3 sense it doesn't have numpy in it
         source=file_handling, 
         step_name="sorting", 
         volume_mounts=[volume_mount]
