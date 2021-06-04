@@ -23,7 +23,6 @@ def retrieve(volume_mount,id):
 def file_handling():
     '''Creates 5 files that contain a list of file addresses. 
     Each file is equaly sized. Sorted with wanted file sizes.'''
-    import numpy as np
 
     size = list()
     everyList = list()
