@@ -2,7 +2,7 @@
 This repository contains Argo workflows changed implemented in a couler format.
 The original Argo workflows are from this https://github.com/argoproj/argo-workflows/tree/master/examples repository
 
-## Documentation on the joutney
+## Documentation on the journey
 [CodiMD](https://codimd.web.cern.ch/UCT5cM_yTsWqM79VLiGnbw?view)
 
 ## Explained .yaml file
