@@ -40,7 +40,33 @@ def file_handling():
     f.close()
 
     # splits list that contains file sizes to 5 equaly sized lists (does not mess up the order)
-    divLists = np.array_split(size, 5)
+    
+    #print(sum(size))
+    #print(len(size))
+    z = 0
+    nLists = 0
+    divLists = list()
+    partSize = sum(size)/5
+
+
+    while nLists < 5:
+
+        partSizeList = list()
+
+        while z < len(size):
+
+            if sum(partSizeList) < partSize or not partSizeList :
+                partSizeList.append(size[z])
+                z += 1
+            else:
+                break
+
+        #print(sum(partSizeList))
+        #print(len(partSizeList))
+        
+        divLists.append(partSizeList)
+        nLists += 1
+
 
     i = 0
     x = 0
@@ -83,7 +109,7 @@ def opendata(id):
 
     retrieve(volume_mount=volume_mount,id=id)
     couler.run_script(
-        image="adreeve/python-numpy", #using this image instead of python:3 sense it doesn't have numpy in it
+        image="python:3", 
         source=file_handling, 
         step_name="sorting", 
         volume_mounts=[volume_mount]
