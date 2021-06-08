@@ -1,36 +1,32 @@
 # the code tests exit handler. the code does the error exit handler.
+# https://www.bogotobogo.com/python/Multithread/python_multithreading_Daemon_join_method_threads.php
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 from couler.core.templates.volume import VolumeMount, Volume
+#from flask import request
 
-    
-
-def nginx_server():
+def hello():
     couler.run_container(
-        image="nginx:1.13", 
-        daemon="true",
-        command=["sh, -c"],
-        step_name="nginx_server",
-        timeout=1   
-    )
-    return 0
+    image="nginx:1.13",
+    command=["nginx"], 
+    step_name= "Server-",
+    daemon=True,
+)
 
-
-def nginx_client(ip):
+def curl():
     couler.run_container(
-        image="appropriate/curl:latest", 
-        command=["/bin/sh", "-c"],
-        args=["echo curl --silent -G http://{{inputs.parameters.server-ip}}:80/ && curl --silent -G http://{{inputs.parameters.server-ip}}:80/"],
-        step_name="nginx_client",
-        
-    )
-    return 0
-
+    image="appropriate/curl:latest",
+    command=["/bin/sh", "-c"], 
+    args=["curl http://localhost:8080/"],
+    step_name= "Curl-",
+)
 
 def daemon_nginx_example():
     
-    nginx_server()
-    nginx_client()
+    
+    hello()
+    curl()
+
 
 daemon_nginx_example()
 
