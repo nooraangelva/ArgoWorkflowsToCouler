@@ -1,6 +1,6 @@
 # ArgoWorkflowsToCouler
 This repository contains Argo workflows changed implemented in a couler format.
-The original Argo workflows are from this https://github.com/argoproj/argo-workflows/tree/master/examples repository
+The original Argo workflows are from [Argo's](https://github.com/argoproj/argo-workflows/tree/master/examples) repository
 
 ## Documentation on the journey
 [CodiMD](https://codimd.web.cern.ch/UCT5cM_yTsWqM79VLiGnbw?view)
@@ -54,3 +54,7 @@ The original Argo workflows are from this https://github.com/argoproj/argo-workf
 ## Daemon - server (not working problems with how to create server)
 - [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/daemon.py)
 - [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/daemon-nginx.yaml)
+
+## a way to extract information from a CMS root file type EDM and creating histograms
+- [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/histogram.py)
+- [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/histogram.yaml)
