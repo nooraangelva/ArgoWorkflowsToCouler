@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: histogram-
+  generateName: kati-
 spec:
   entrypoint: boss
   volumeClaimTemplates:
@@ -41,8 +41,6 @@ spec:
         cd PhysObjectExtractor
         scram b
         ln -s python/poet_cfg.py .
-        ln -sf /cvmfs/cms-opendata-conddb.cern.ch/FT_53_LV5_AN1_RUNA FT_53_LV5_AN1
-        ln -sf /cvmfs/cms-opendata-conddb.cern.ch/FT_53_LV5_AN1_RUNA.db FT_53_LV5_AN1_RUNA.db
         cmsRun poet_cfg.py
         cp myoutput.root /mnt/vol/
         ls -a  /mnt/vol/
@@ -93,3 +91,4 @@ spec:
       volumeMounts:
       - name: workdir
         mountPath: /mnt/vol
+  
