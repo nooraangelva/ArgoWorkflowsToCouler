@@ -1,0 +1,148 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: histogram-
+spec:
+  entrypoint: boss
+  volumes:
+  - name: task-pv-storage
+    persistentVolumeClaim:
+      claimName: task-pv-claim
+
+  templates:
+  - name: boss
+    dag:
+      tasks:
+      - name: scatter-step
+        template: scatter-step-template
+        arguments:
+         parameters:
+          - name: file
+            value: "{{item.file}}"
+          - name: it
+            value: "{{item.it}}"
+        withItems:
+          - { file: '6004', it: '1'}
+          - { file: '6004', it: '2'}
+      - name: merge-step
+        dependencies: [scatter-step]
+        template: merge-step-template
+      - name: second-first-way-step
+        dependencies: [merge-step]
+        template: second-step-first-template
+      - name: second-second-way-step
+        dependencies: [merge-step]
+        template: second-step-two-template
+
+
+
+  - name: scatter-step-template
+    inputs:
+      parameters:
+      - name: it
+      - name: file
+    script:
+      image: cmsopendata/cmssw_5_3_32
+      command: [bash]
+      source: | 
+        sudo chown $USER /mnt/vol
+
+        source /opt/cms/entrypoint.sh
+        git clone git://github.com/cms-opendata-workshop/workshop2021-poetpayload-cloud.git
+        cd workshop2021-poetpayload-cloud
+        cd PhysObjectExtractor
+        scram b
+        mkdir -p /mnt/vol/opendata
+        #varfiles= python cernopendata-client download-files --recid "{{inputs.parameters.file}}" --filter-range "{{inputs.parameters.it}}"-"{{inputs.parameters.it}}" | tee /mnt/vol/opendata/+"{{inputs.parameters.it}}"+".root
+        #varfiles= "{{inputs.parameters.file}}"
+        #sed -i "s,root://eospublic.cern.ch//eos/opendata/cms/Run2012B/DoubleMuParked/AOD/22Jan2013-v1/10000/1EC938EF-ABEC-E211-94E0-90E6BA442F24.root,'$varfiles',g" python/poet_cfg_cloud.py
+
+        cmsRun python/poet_cfg_cloud.py True True
+        cp myoutput.root /mnt/vol/files
+        iterator="{{inputs.parameters.it}}"
+        ls -a  /mnt/vol/
+        ls -a /mnt/vol/files
+        mv /mnt/vol/files/myoutput.root /mnt/vol/files/
+
+        #cp condor/merge_jobs.py /mnt/vol/merge_jobs.py
+
+      volumeMounts:
+      - name: task-pv-storage
+        mountPath: /mnt/vol
+
+  
+  - name: merge-step-template
+    script:
+      image: rootproject/root:latest
+      command: [bash]
+      source: | 
+        hadd mnt/vol/myoutput.root mnt/vol/files/myoutput*.root
+        rm -rf mnt/vol/files
+        ls -a /mnt/vol
+        # cd /mnt
+        # python3 /mnt/data/merge_jobs.py /mnt/data    
+      volumeMounts:
+      - name: task-pv-storage
+        mountPath: /mnt/vol
+
+  - name: second-step-first-template
+    script:
+      image: nooraangelva/cmssw:10_6_12-argo-v2
+      command: [bash]
+      source: | 
+        sudo chown $USER /mnt/vol
+
+        source /opt/cms/cmsset_default.sh
+        cd $HOME/CMSSW_10_6_12/src
+        eval `scramv1 runtime -sh`
+
+        git clone https://github.com/cms-legacydata-analyses/PhysObjectExtractorTool.git
+        cd PhysObjectExtractorTool
+        cd PhysObjectExtractor
+        cd test
+        \cp -r /mnt/vol/myoutput.root ./
+        g++ -g -O3 -Wall -Wextra -o EventLoopAnalysis EventLoopAnalysisTemplate.cxx $(root-config --cflags --libs)
+        ./EventLoopAnalysis
+        ls -a
+
+      volumeMounts:
+      - name: task-pv-storage
+        mountPath: /mnt/vol
+      resources:
+        limits:
+          memory: 2Gi
+        requests:
+          memory: 1.7Gi
+          cpu: 750m
+
+  - name: second-step-two-template
+    script:
+      image: nooraangelva/cmssw:10_6_12-argo-v2
+      command: [bash]
+      source: | 
+        sudo chown $USER /mnt/vol
+        source /opt/cms/cmsset_default.sh
+        cd $HOME/CMSSW_10_6_12/src
+        eval `scramv1 runtime -sh`
+
+        git clone https://github.com/cms-legacydata-analyses/PhysObjectExtractorTool.git
+        cd PhysObjectExtractorTool
+        cd PhysObjectExtractor
+        cd test
+        \cp -r /mnt/vol/myoutput.root ./
+        g++ -g -O3 -Wall -Wextra -Wpedantic -o RDFAnalysis RDFAnalysisTemplate.cxx $(root-config --cflags --libs)
+        ./RDFAnalysis
+        ls -a
+
+      volumeMounts:
+      - name: task-pv-storage
+        mountPath: /mnt/vol
+      resources:
+        limits:
+          memory: 2Gi
+        requests:
+          memory: 1.7Gi
+          cpu: 750m
+  
+
+
