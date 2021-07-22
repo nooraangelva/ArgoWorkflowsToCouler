@@ -46,7 +46,7 @@ The original Argo workflows are from [Argo's](https://github.com/argoproj/argo-w
 ## Getting a file and sorting it
 [Task](https://github.com/cms-dpoa/cms-dpoa-getting-started/issues/78)
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/file_retrieve.py)
-- 
+- [Argo-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/file_retrieve.yaml)
 
 ## Daemon - basic
 - [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/daemon_basic.py)
