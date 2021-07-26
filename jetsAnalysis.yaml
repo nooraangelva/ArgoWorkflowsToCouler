@@ -1,0 +1,419 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: adelina-
+spec:
+  entrypoint: boss
+  volumeClaimTemplates:
+  - metadata:
+      name: workdir
+    spec:
+      accessModes: ["ReadWriteMany"]
+      resources:
+        requests:
+          storage: 10Gi
+  volumes:
+  - name: cloud-pass
+  - name: secret-pw
+    secret:
+      secretName: adelina
+    
+
+  arguments:
+    parameters:
+    - name: sampleid                                    
+      value: "JME-RunIISummer19UL18DIGI-00012" 
+    - name: PU-dist-data                                   
+      value: "/mnt/vol/MyDataPileupHistogram.root"
+    - name: PU-dist-mc
+      value: "/mnt/vol/MyMCPileupHistogram.root"
+    - name: algo
+      value: "AK"
+    - name: cone_size
+      value: "4"
+    - name: jet_type
+      value: "PFchs"
+    - name: PU-1
+      value: "FlatPU/JRA_101.root"
+    - name: PU-2
+      value: "FlatPU/JRA_102.root"
+    - name: noPU-1
+      value: "EpsilonPU/JRA_1.root"
+    - name: noPU-2
+      value: "EpsilonPU/JRA_10.root"
+    - name: PU-output
+      value: "/mnt/vol/lumi_file_PU.txt"
+    - name: noPU-output
+      value: "/mnt/vol/lumi_file_noPU.txt"
+    - name: lumi-match-file
+      value: "/mnt/vol/Matchedfiles.txt"
+    - name: batch_size
+      value: "10"
+
+    
+
+  templates:
+  - name: boss
+    inputs:
+      parameters:
+      - name: sampleid
+      - name: PU-dist-data
+      - name: PU-dist-mc
+      - name: algo
+      - name: cone_size
+      - name: jet_type
+      - name: PU-1
+      - name: PU-2
+      - name: PU-output
+      - name: noPU-output
+      - name: noPU-1 
+      - name: noPU-2 
+      - name: lumi-match-file
+      - name: batch_size
+    dag:
+      tasks:
+      - name: get-conditions-name
+        template: get-conditions-template
+        arguments:
+          parameters:
+          - name: sampleid
+            value: "{{inputs.parameters.sampleid}}"
+
+      - name: create-PU-dist
+        dependencies: [get-conditions-name]
+        template: create-PU-dist-template
+        arguments:
+          parameters:
+          - name: PU-dist-data
+            value: "{{inputs.parameters.PU-dist-data}}"
+          - name: PU-dist-mc
+            value: "{{inputs.parameters.PU-dist-mc}}"
+
+      - name: reana-access
+        dependencies: [create-PU-dist]
+        template: reana-access-template
+
+      - name: produce-ntuple-PU
+        dependencies: [reana-access]
+        template: produce-ntuple-list-lumi-template
+        arguments:
+          parameters:
+          - name: para1
+            value: "{{inputs.parameters.PU-1}}"
+          - name: para2
+            value: "{{inputs.parameters.PU-2}}"
+          - name: output
+            value: "{{inputs.parameters.PU-output}}"
+          - name: algo
+            value: "{{inputs.parameters.algo}}"
+          - name: cone_size
+            value: "{{inputs.parameters.cone_size}}"
+          - name: jet_type
+            value: "{{inputs.parameters.jet_type}}"
+
+      - name: produce-ntuple-noPU
+        dependencies: [reana-access]
+        template: produce-ntuple-list-lumi-template
+        arguments:
+          parameters:
+          - name: para1
+            value: "{{inputs.parameters.noPU-1}}"
+          - name: para2
+            value: "{{inputs.parameters.noPU-2}}"
+          - name: output
+            value: "{{inputs.parameters.noPU-output}}"
+          - name: algo
+            value: "{{inputs.parameters.algo}}"
+          - name: cone_size
+            value: "{{inputs.parameters.cone_size}}"
+          - name: jet_type
+            value: "{{inputs.parameters.jet_type}}"
+
+      - name: match-lumi
+        dependencies: [produce-ntuple-noPU, produce-ntuple-PU]
+        template: produce-ntuple-match-lumi-template
+        arguments:
+          parameters:
+          - name: lumi_file_noPU
+            value: "{{inputs.parameters.noPU-output}}"
+          - name: lumi_file_PU
+            value: "{{inputs.parameters.PU-output}}"
+          - name: output_file
+            value: "{{inputs.parameters.lumi-match-file}}"
+          - name: batch_size
+            value: "{{inputs.parameters.batch_size}}"
+
+      - name: generate-scatter
+        dependencies: [match-lumi]
+        template: generate-scatter-template
+        arguments:
+          parameters:
+          - name: file
+            value: "{{inputs.parameters.lumi-match-file}}"
+
+      - name: match-jets
+        dependencies: [generate-scatter]
+        template: produce-ntuple-match-jets-template
+        arguments:
+          parameters:
+          - name: algo
+            value: "{{inputs.parameters.algo}}"
+          - name: cone_size
+            value: "{{inputs.parameters.cone_size}}"
+          - name: jet_type
+            value: "{{inputs.parameters.jet_type}}"
+          - name: input_file
+            value: "{{inputs.parameters.lumi-match-file}}"
+          - name: batch_size
+            value: "{{inputs.parameters.batch_size}}"
+          - name: it
+            value: "{{item}}"
+          - name: PU-dist-data
+            value: "{{inputs.parameters.PU-dist-data}}"
+          - name: PU-dist-mc
+            value: "{{inputs.parameters.PU-dist-mc}}"
+        withParam: "{{tasks.generate-scatter.outputs.result}}"
+
+
+
+  - name: get-conditions-template
+    inputs:
+        parameters:
+        - name: sampleid
+    script:
+      image: peterevans/curl-jq
+      command: [sh]
+      source: | 
+        curl_command="curl https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get/{{inputs.parameters.sampleid}} -k --silent"
+        eval $curl_command | jq ".results.sequences[].pileup" | sed s/'"'/''/g > /mnt/vol/pileup.txt
+        eval $curl_command | jq ".results.sequences[].conditions" | sed s/'"'/''/g > /mnt/vol/conditions.txt
+        eval $curl_command | jq ".results.cmssw_release" | sed s/'"'/''/g > /mnt/vol/release.txt
+        echo -n "Pileup: "
+        cat /mnt/vol/pileup.txt
+        echo -n "Conditions: "
+        cat /mnt/vol/conditions.txt
+        echo -n "CMSSW release: "
+        cat /mnt/vol/release.txt
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+
+  - name: create-PU-dist-template
+    inputs:
+      parameters:
+      - name: PU-dist-data
+      - name: PU-dist-mc
+    script:
+      image: nooraangelva/cmssw:10_6_12-argo-v2
+      command: [bash]
+      source: | 
+        #cp input/PileupHistogram-goldenJSON-13tev-2018-69200ub-100bins.root {{inputs.parameters.PU-dist-data}}
+
+        source /opt/cms/cmsset_default.sh
+        cd $HOME/CMSSW_10_6_12/src
+        eval `scramv1 runtime -sh`
+
+        python makeMCPileupHist.py SimGeneral.MixingModule.mix_$(cat /mnt/vol/pileup.txt)_cfi --outputFilename {{inputs.parameters.PU-dist-mc}}
+        
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+
+  - name: reana-access-template
+    script:
+      image: nooraangelva/reana-auth-krb5
+      command: [bash]
+      source: | 
+        kinit -k -t /secret/mountpath/.keytab nangelva@CERN.CH 
+        id
+        klist
+        ls -l /tmp/krb5cc_1000
+        cp /tmp/krb5cc_1000 /mnt/vol
+
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+      - name: secret-pw     # mount file containing secret at /secret/mountpath
+        mountPath: "/secret/mountpath"
+
+  - name: produce-ntuple-list-lumi-template
+    inputs:
+      parameters:
+      - name: algo
+      - name: cone_size
+      - name: jet_type
+      - name: para1
+      - name: para2
+      - name: output
+    script:
+      image: nooraangelva/cmssw:10_6_12-argo-v2
+      command: [bash]
+      source: | 
+        mount_vol_files=/mnt/vol/files.txt
+        echo 'root://eosuser.cern.ch//eos/user/a/adlintul/REANA/RunIISummer19UL18/'{{inputs.parameters.para1}} > $mount_vol_files
+        echo 'root://eosuser.cern.ch//eos/user/a/adlintul/REANA/RunIISummer19UL18/'{{inputs.parameters.para2}} >> $mount_vol_files
+      
+        cp /mnt/vol/krb5cc_1000 /tmp
+        #sudo ls -a /mnt/vol
+        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+        #klist
+
+        source /opt/cms/cmsset_default.sh
+        cd $HOME/CMSSW_10_6_12/src
+        eval `scramv1 runtime -sh`
+        
+        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+        
+        #cat /home/cmsusr/CMSSW_10_6_12/src/ListRunLumi.cpp
+        #algorithm=$(echo "AK4PFchs" | tr '[:upper:]' '[:lower:]')
+        #echo "./RunListRunLumi $mount_vol_files[0] $algorithm >> output.txt;"
+        #./RunListRunLumi $mount_vol_files[0] $algorithm >> output.txt;
+
+        for i in $(cat $mount_vol_files); do
+          #echo "./RunListRunLumi $i $algorithm >> {{inputs.parameters.output}};"
+          ./RunListRunLumi $i $algorithm >> {{inputs.parameters.output}};
+        done
+        #cat {{inputs.parameters.output}}
+  
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+      - name: secret-pw     # mount file containing secret at /secret/mountpath
+        mountPath: "/secret/mountpath"
+
+  - name: produce-ntuple-match-lumi-template
+    inputs:
+      parameters:
+      - name: lumi_file_noPU
+      - name: lumi_file_PU
+      - name: output_file
+      - name: batch_size
+
+    script:
+      image: nooraangelva/cmssw:10_6_12-argo-v2
+      command: [bash]
+      source: | 
+        cp /mnt/vol/krb5cc_1000 /tmp
+        #sudo ls -a /mnt/vol
+        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+        source /opt/cms/cmsset_default.sh
+        cd $HOME/CMSSW_10_6_12/src
+        eval `scramv1 runtime -sh`
+
+        cat {{inputs.parameters.lumi_file_noPU}} {{inputs.parameters.lumi_file_PU}} | ./RunMatchFiles > MatchedFiles
+        #echo 'MatchedFiles:' > {{inputs.parameters.output_file}}
+        ./RunPrepareMatching MatchedFiles {{inputs.parameters.batch_size}} >> {{inputs.parameters.output_file}}
+        cat {{inputs.parameters.output_file}}
+
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+      - name: secret-pw     # mount file containing secret at /secret/mountpath
+        mountPath: "/secret/mountpath"
+
+  - name: generate-scatter-template
+    inputs:
+      parameters:
+      - name: file
+    script:
+      image: django:latest
+      command: [python]
+      source: |
+        import json
+        import sys
+        
+        
+        with open("{{inputs.parameters.file}}", 'r') as f:
+          out = f.readlines()
+        
+        y = 0
+        for x in out:
+          file = open("/mnt/vol/Matchedfiles_"+str(y)+".txt", "w")
+          file.write(str(x))
+          file.close()
+          y += 1
+
+        json.dump([i for i in range(len(out))], sys.stdout)
+
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+      - name: secret-pw     # mount file containing secret at /secret/mountpath
+        mountPath: "/secret/mountpath"
+
+
+  - name: produce-ntuple-match-jets-template
+    inputs:
+      parameters:
+      - name: algo
+      - name: cone_size
+      - name: jet_type
+      - name: input_file
+      - name: batch_size
+      - name: it
+      - name: PU-dist-data
+      - name: PU-dist-mc
+    script:
+      image: nooraangelva/cmssw:10_6_12-argo-v2
+      command: [bash]
+      source: | 
+        cp /mnt/vol/krb5cc_1000 /tmp
+        #sudo ls -a /mnt/vol
+        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+        source /opt/cms/cmsset_default.sh
+        cd $HOME/CMSSW_10_6_12/src
+        eval `scramv1 runtime -sh`
+
+        # sleep_time=15
+        # echo I will sleep for $(({sleep}*$sleep_time)) minutes
+        # echo Time when sleep started $(date +"%T")
+        # sleep $(({sleep}*$sleep_time))m
+        # echo Time when sleep is over $(date +"%T")
+
+        echo "INFO | Starting to hadd.."
+
+        read -r NoPUFile PUFile <<<$(echo /mnt/vol/Matchedfiles_{{inputs.parameters.it}}.txt)
+
+        NoPUFile=$(echo $NoPUFile | tr ':' ' ')
+        PUFile=$(echo $PUFile | tr ':' ' ')
+
+        nopu_files="$NoPUFile"
+        pu_files="$PUFile"
+
+        hadd -f -k -n 5 /mnt/vol/NoPUFile.root $nopu_files
+        hadd -f -k -n 5 /mnt/vol/PUFile.root $pu_files
+
+        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+
+        # jet_synchtest_x \
+        #   -basepath '//' \
+        #   -samplePU /mnt/vol/PUFile.root \
+        #   -sampleNoPU /mnt/vol/NoPUFile.root \
+        #   -algo1 $algorithm \
+        #   -algo2 $algorithm \
+        #   -iftest false \
+        #   -maxEvts 10000000 \
+        #   -ApplyJEC false \
+        #   -outputPath /mnt/vol \
+        #   -npvRhoNpuBinWidth 10 \
+        #   -NBinsNpvRhoNpu 6 \
+        #   -MCPUReWeighting {{inputs.parameters.PU-dist-mc}} \
+        #   -MCPUHistoName pileup \
+        #   -DataPUReWeighting {{inputs.parameters.PU-dist-data}} \
+        #   -useweight true \
+        #   -nrefmax 3 \
+        #   -doNotSave true
+
+        # mv /mnt/vol/output_*.root /mnt/vol/Matchedjets.root
+
+        # rm /mnt/vol/NoPUFile.root
+        # rm /mnt/vol/PUFile.root
+
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+      - name: secret-pw     # mount file containing secret at /secret/mountpath
+        mountPath: "/secret/mountpath"
+
