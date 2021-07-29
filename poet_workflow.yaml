@@ -7,18 +7,18 @@ spec:
   volumes:
   - name: task-pv-storage
     persistentVolumeClaim:
-      claimName: task-pv-claim
+      claimName: nfs-<ID>
 
   arguments:
     parameters:
     - name: processName                                  
       value: 'DoubleMuParked'
     - name: firstFile                                  
-      value: 10
+      value: 3
     - name: nFiles                               
       value: 4
     - name: nEvents                               
-      value: 100
+      value: 1
     - name: recid
       value: 6004
     
@@ -34,7 +34,10 @@ spec:
       - name: recid
     dag:
       tasks:
+      - name: prepare
+        template: prepare-template
       - name: write-step
+        dependencies: [prepare]
         template: write-files-step-template
         arguments:
          parameters:
@@ -78,7 +81,21 @@ spec:
       - name: eventloop-analysis-step
         dependencies: [merge-step]
         template: eventloop-analysis-step-template
+        
+  # prepare the data directories needed in the workflow steps      
+  - name: prepare-template
+    script:
+      image: ubuntu:latest
+      command: [bash]
+      source: |
+        mkdir -p /mnt/vol/data
+        mkdir -p /mnt/vol/code
+        chmod -R 777 /mnt/vol
+      volumeMounts:
+      - name: task-pv-storage
+        mountPath: /mnt/vol
 
+  # get the full list of files and write the files to be processed to a file
   - name: write-files-step-template
     inputs:
       parameters:
@@ -91,11 +108,11 @@ spec:
       source: | 
         lastFile=$(( {{inputs.parameters.nFiles}}+{{inputs.parameters.firstFile}} ))
         realLastFile=$(( $lastFile - 1 ))
-
-        mkdir -p /mnt/vol/data
         cernopendata-client get-file-locations --recid {{inputs.parameters.recid}} --protocol xrootd > /mnt/vol/files_{{inputs.parameters.recid}}.txt;
         sed -n '{{inputs.parameters.firstFile}},'$realLastFile'p;'$lastFile'q' /mnt/vol/files_{{inputs.parameters.recid}}.txt > /mnt/vol/data/scatter_files.txt
-       
+        echo Selected files:
+        cat /mnt/vol/data/scatter_files.txt
+        
       volumeMounts:
       - name: task-pv-storage
         mountPath: /mnt/vol
@@ -106,6 +123,7 @@ spec:
           memory: 1.7Gi
           cpu: 750m
 
+  # generate the iterator list for the scatter step
   - name: gen-list-template
     inputs:
       parameters:
@@ -117,10 +135,11 @@ spec:
       source: |
         import json
         import sys
-        begin = {{inputs.parameters.firstFile}}-1
-        end = {{inputs.parameters.firstFile}}+{{inputs.parameters.nFiles}} -1
+        begin = {{inputs.parameters.firstFile}}
+        end = {{inputs.parameters.firstFile}}+{{inputs.parameters.nFiles}}
         json.dump([i for i in range(begin,end)], sys.stdout)
 
+  # do the processing
   - name: scatter-step-template
     inputs:
       parameters:
@@ -154,8 +173,8 @@ spec:
         
         mv myoutput.root /mnt/vol/scatter/$processName/myoutput$iterator.root
 
-        cp cloud/merge_job_cloud.py /mnt/vol/codes
-        cp test/EventLoopAnalysisTemplate.cxx /mnt/vol/codes
+        cp cloud/merge_job_cloud.py /mnt/vol/code
+        cp test/EventLoopAnalysisTemplate.cxx /mnt/vol/code
 
       volumeMounts:
       - name: task-pv-storage
@@ -167,6 +186,7 @@ spec:
           memory: 1.7Gi
           cpu: 750m
   
+  # merge the files from the scatter steps to a single file
   - name: merge-step-template
     inputs:
       parameters:
@@ -180,9 +200,11 @@ spec:
         hadd -f /mnt/vol/poetoutput.root /mnt/vol/scatter/$processName/myoutput*.root
         
         # cd /mnt/vol
-        # python3 /mnt/vol/codes/merge_job_cloud.py /mnt/vol/scatter/$processName
+        # python3 /mnt/vol/code/merge_job_cloud.py /mnt/vol/scatter/$processName
 
-        rm -rf /mnt/vol/scatter/$processName/
+        rm -rf /mnt/vol/scatter/ # this contains the separated output files, now merged
+        rm -rf /mnt/vol/data  # this contains the list of selected files, it could be used in this step to check that all files have been processed
+        
       volumeMounts:
       - name: task-pv-storage
         mountPath: /mnt/vol
@@ -193,17 +215,19 @@ spec:
           memory: 1.7Gi
           cpu: 750m
 
+  # prepare some histograms to check the merged output file
   - name: eventloop-analysis-step-template
     script:
       image: rootproject/root:latest
       command: [bash]
       source: | 
         \cp -r /mnt/vol/poetoutput.root ./
-        g++ -g -O3 -Wall -Wextra -o EventLoopAnalysis /mnt/vol/codes/EventLoopAnalysisTemplate.cxx $(root-config --cflags --libs)
+        g++ -g -O3 -Wall -Wextra -o EventLoopAnalysis /mnt/vol/code/EventLoopAnalysisTemplate.cxx $(root-config --cflags --libs)
         ./EventLoopAnalysis
 
         mv histograms.root /mnt/vol/histograms.root
-        rm -rf /mnt/vol/codes
+        mv *.pdf /mnt/vol
+        rm -rf /mnt/vol/code
         
       volumeMounts:
       - name: task-pv-storage
