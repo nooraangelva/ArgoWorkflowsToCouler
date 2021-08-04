@@ -13,12 +13,12 @@ from couler.core.syntax.volume import create_workflow_volume
 def opendata():
     '''creates volume and executes containers by calling functions (containers)'''
 
-    # access_key = {"access_key": "key1234", "access_value": "value5678"}
-    # secret2 = couler.create_secret(
-    #     secret_data=access_key, namespace="argo", name="dummypart3"
-    # )
+    access_key = {"access_key": "key1234", "access_value": "value5678"}
+    secret2 = couler.create_secret(
+        secret_data=access_key, namespace="argo", name="dummypart7", dry_run=True
+    )
     couler.run_container(
-        image="ubuntu:latest", secret="dummypart3", command=["bash","-c", "echo $access_value"]
+        image="ubuntu:latest", secret=secret2, command=["bash","-c", "echo $access_value"]
     )
     
 
