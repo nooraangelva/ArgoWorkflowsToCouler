@@ -51,6 +51,10 @@ spec:
       value: "10"
     - name: era
       value: "REANA"
+    - name: output_file
+      value: "/mnt/vol/JRA_jecl1.root"
+    - name: output_merged
+      value: "/mnt/vol/merged.root"
     
 
     
@@ -74,6 +78,8 @@ spec:
       - name: lumi-match-file
       - name: batch_size
       - name: era
+      - name: output_merged
+      - name: output_file
     dag:
       tasks:
       - name: get-conditions-name
@@ -197,21 +203,24 @@ spec:
             value: "{{item}}"
           - name: era
             value: "{{inputs.parameters.era}}"
+     
+      # - name: generate-scatter-part-2
+      #   dependencies: [compute-l1]
+      #   template: generate-scatter-template
+      #   arguments:
+      #     parameters:
+      #     - name: file
+      #       value: "{{inputs.parameters.lumi-match-file}}"
 
-      
-      - name: generate-scatter-part-2
+      - name: apply-l1-part-1
         dependencies: [compute-l1]
-        template: generate-scatter-template
+        template: apply-l1-template
         arguments:
           parameters:
-          - name: file
-            value: "{{inputs.parameters.lumi-match-file}}"
-
-      - name: higher_level
-        dependencies: [generate-scatter-part-2]
-        template: higher_level-template
-        arguments:
-          parameters:
+          - name: output_merged
+            Value: "{{inputs.parameters.output_merged}}"
+          - name: output_file
+            value: "{{inputs.parameters.output_file}}"
           - name: algo
             value: "{{inputs.parameters.algo}}"
           - name: cone_size
@@ -219,13 +228,80 @@ spec:
           - name: jet_type
             value: "{{inputs.parameters.jet_type}}"
           - name: input_file
-            value: "{{inputs.parameters.lumi-match-file}}"
+            value: "{{inputs.parameters.PU-1}}"
           - name: batch_size
             value: "{{inputs.parameters.batch_size}}"
-          - name: it
-            value: "{{item}}"
+          # - name: it
+          #   value: "{{item}}"
           - name: era
             value: "{{inputs.parameters.era}}"
+          #withParam: "{{tasks.generate-scatter-part-2.outputs.result}}"
+
+      - name: apply-l1-part-2
+        dependencies: [compute-l1]
+        template: apply-l1-template
+        arguments:
+          parameters:
+          - name: output_merged
+            Value: "{{inputs.parameters.output_merged}}"
+          - name: output_file
+            value: "{{inputs.parameters.output_file}}"
+          - name: algo
+            value: "{{inputs.parameters.algo}}"
+          - name: cone_size
+            value: "{{inputs.parameters.cone_size}}"
+          - name: jet_type
+            value: "{{inputs.parameters.jet_type}}"
+          - name: input_file
+            value: "{{inputs.parameters.PU-2}}"
+          - name: batch_size
+            value: "{{inputs.parameters.batch_size}}"
+          # - name: it
+          #   value: "{{item}}"
+          - name: era
+            value: "{{inputs.parameters.era}}"
+          # withParam: "{{tasks.generate-scatter-part-2.outputs.result}}"
+
+
+      # - name: histogram
+      #   dependencies: [apply_l1]
+      #   template: histogram-template
+      #   arguments:
+      #     parameters:
+      #     - name: algo
+      #       value: "{{inputs.parameters.algo}}"
+      #     - name: cone_size
+      #       value: "{{inputs.parameters.cone_size}}"
+      #     - name: jet_type
+      #       value: "{{inputs.parameters.jet_type}}"
+      #     - name: input_file
+      #       value: "{{inputs.parameters.lumi-match-file}}"
+      #     - name: batch_size
+      #       value: "{{inputs.parameters.batch_size}}"
+      #     - name: it
+      #       value: "{{item}}"
+      #     - name: era
+      #       value: "{{inputs.parameters.era}}"
+
+      # - name: compute_l2l3
+      #   dependencies: [histogram]
+      #   template: compute_l2l3-template
+      #   arguments:
+      #     parameters:
+      #     - name: algo
+      #       value: "{{inputs.parameters.algo}}"
+      #     - name: cone_size
+      #       value: "{{inputs.parameters.cone_size}}"
+      #     - name: jet_type
+      #       value: "{{inputs.parameters.jet_type}}"
+      #     - name: input_file
+      #       value: "{{inputs.parameters.lumi-match-file}}"
+      #     - name: batch_size
+      #       value: "{{inputs.parameters.batch_size}}"
+      #     - name: it
+      #       value: "{{item}}"
+      #     - name: era
+      #       value: "{{inputs.parameters.era}}"
 
 
 
@@ -259,12 +335,11 @@ spec:
     script:
       image: nooraangelva/cmssw:10_6_12-argo-v2
       command: [bash]
-      source: | 
-        #cp input/PileupHistogram-goldenJSON-13tev-2018-69200ub-100bins.root {{inputs.parameters.PU-dist-data}}
-
+      source: |
         source /opt/cms/cmsset_default.sh
         cd $HOME/CMSSW_10_6_12/src
         eval `scramv1 runtime -sh`
+
         python makeMCPileupHist.py SimGeneral.MixingModule.mix_$(cat /mnt/vol/pileup.txt)_cfi --outputFilename {{inputs.parameters.PU-dist-mc}}
       volumeMounts:
       - name: workdir
@@ -388,7 +463,6 @@ spec:
       - name: secret-pw     # mount file containing secret at /secret/mountpath
         mountPath: "/secret/mountpath"
 
-
   - name: produce-ntuple-match-jets-template
     inputs:
       parameters:
@@ -498,8 +572,10 @@ spec:
           -functionType standard \
           -era {{inputs.parameters.era}}PreDeriveL1
 
+        ls -a /mnt/vol/
         root -b -q -l `printf "deriveL1.C+(\"/mnt/vol/\",\"$algorithm\",\"{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}\",\"{{inputs.parameters.era}}\")"`
         mv *.txt /mnt/vol/
+        ls -a /mnt/vol/
 
 
       volumeMounts:
@@ -508,7 +584,7 @@ spec:
       - name: secret-pw     # mount file containing secret at /secret/mountpath
         mountPath: "/secret/mountpath"
 
-  - name: higher_level-template
+  - name: apply-l1-template
     inputs:
       parameters:
       - name: algo
@@ -516,7 +592,8 @@ spec:
       - name: jet_type
       - name: input_file
       - name: era
-      - name: it
+      - name: output_file
+      - name: output_merged
     script:
       image: nooraangelva/cmssw:10_6_12-argo-v2
       command: [bash]
@@ -529,37 +606,131 @@ spec:
         cd $HOME/CMSSW_10_6_12/src
         eval `scramv1 runtime -sh`
 
-        mkdir -p {eos_path}/{fit_function}/
+        #cat /mnt/vol/L1FastJet.txt
 
-        hadd -k -f -n 5 {output_path}/Merged.root {input_file}
+        cp /mnt/vol/L1FastJet.txt {{inputs.parameters.era}}_L1FastJet_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
 
-        algorithm=$(echo {algo}{cone_size}{jet_type} | tr '[:upper:]' '[:lower:]')l1
+        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
 
-        jet_l2_correction_x \
-          -input {output_path}/Merged.root \
+        hadd -k -f -n 5  {{inputs.parameters.output_merged}} root://eosuser.cern.ch//eos/user/a/adlintul/REANA/RunIISummer19UL18/{{inputs.parameters.input_file}}
+
+        jet_apply_jec_x \
+          -input {{inputs.parameters.output_merged}} \
+          -output {{inputs.parameters.output_file}} \
+          -jecpath $PWD \
+          -era {{inputs.parameters.era}} \
+          -levels 1 \
           -algs $algorithm \
-          -era {era} \
-          -output l2.root \
-          -outputDir {output_path} \
-          -makeCanvasVariable AbsCorVsJetPt:JetEta \
-          -formats .png \
-          -l2l3 true \
-          -batch true \
-          -histMet median \
-          -delphes false \
-          -maxFitIter 30 \
-          -l2calofit DynamicMin \
-          -l2pffit {fit_function} \
-          -ptclipfit true
-
-        cp {output_path}/{era}*.txt {output_path}/L2Relative.txt
-        cp {output_path}/*.png {eos_path}/{fit_function}/
-
-
-
+          -L1FastJet true \
+          -saveitree false
+        
       volumeMounts:
       - name: workdir
         mountPath: /mnt/vol
       - name: secret-pw     # mount file containing secret at /secret/mountpath
         mountPath: "/secret/mountpath"
+
+  # - name: histogram-template
+  #   inputs:
+  #     parameters:
+  #     - name: algo
+  #     - name: cone_size
+  #     - name: jet_type
+  #     - name: input_file
+  #     - name: era
+  #     - name: it
+  #   script:
+  #     image: nooraangelva/cmssw:10_6_12-argo-v2
+  #     command: [bash]
+  #     source: | 
+  #       cp /mnt/vol/krb5cc_1000 /tmp
+  #       #sudo ls -a /mnt/vol
+  #       KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+  #       source /opt/cms/cmsset_default.sh
+  #       cd $HOME/CMSSW_10_6_12/src
+  #       eval `scramv1 runtime -sh`
+
+  #       algorithm=$(echo {algo}{cone_size}{jet_type} | tr '[:upper:]' '[:lower:]')l1:0.2
+
+  #       jet_response_analyzer_x JetMETAnalysis/JetAnalyzers/config/jra_dr_finebinning.config \
+  #         -input {input_file} \
+  #         -nbinsabsrsp 0 \
+  #         -nbinsetarsp 0 \
+  #         -nbinsphirsp 0 \
+  #         -nbinsrelrsp 200 \
+  #         -doflavor false \
+  #         -flavorDefinition phys \
+  #         -MCPUReWeighting {PU_dist_mc} \
+  #         -MCPUHistoName pileup \
+  #         -DataPUReWeighting {PU_dist_data} \
+  #         -DataPUHistoName pileup \
+  #         -output {output_file} \
+  #         -useweight true \
+  #         -nrefmax 3 \
+  #         -algs $algorithm \
+  #         -relrspmin 0.0 \
+  #         -relrspmax 2.0
+
+        
+  #     volumeMounts:
+  #     - name: workdir
+  #       mountPath: /mnt/vol
+  #     - name: secret-pw     # mount file containing secret at /secret/mountpath
+  #       mountPath: "/secret/mountpath"
+
+  # - name: compute_l2l3-template
+  #   inputs:
+  #     parameters:
+  #     - name: algo
+  #     - name: cone_size
+  #     - name: jet_type
+  #     - name: input_file
+  #     - name: era
+  #     - name: it
+  #   script:
+  #     image: nooraangelva/cmssw:10_6_12-argo-v2
+  #     command: [bash]
+  #     source: | 
+  #       cp /mnt/vol/krb5cc_1000 /tmp
+  #       #sudo ls -a /mnt/vol
+  #       KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+  #       source /opt/cms/cmsset_default.sh
+  #       cd $HOME/CMSSW_10_6_12/src
+  #       eval `scramv1 runtime -sh`
+
+  #       mkdir -p {eos_path}/{fit_function}/
+
+  #       hadd -k -f -n 5 {output_path}/Merged.root {input_file}
+
+  #       algorithm=$(echo {algo}{cone_size}{jet_type} | tr '[:upper:]' '[:lower:]')l1
+
+  #       jet_l2_correction_x \
+  #         -input {output_path}/Merged.root \
+  #         -algs $algorithm \
+  #         -era {era} \
+  #         -output l2.root \
+  #         -outputDir {output_path} \
+  #         -makeCanvasVariable AbsCorVsJetPt:JetEta \
+  #         -formats .png \
+  #         -l2l3 true \
+  #         -batch true \
+  #         -histMet median \
+  #         -delphes false \
+  #         -maxFitIter 30 \
+  #         -l2calofit DynamicMin \
+  #         -l2pffit {fit_function} \
+  #         -ptclipfit true
+
+  #       cp {output_path}/{era}*.txt {output_path}/L2Relative.txt
+  #       cp {output_path}/*.png {eos_path}/{fit_function}/
+
+
+        
+  #     volumeMounts:
+  #     - name: workdir
+  #       mountPath: /mnt/vol
+  #     - name: secret-pw     # mount file containing secret at /secret/mountpath
+  #       mountPath: "/secret/mountpath"
 
