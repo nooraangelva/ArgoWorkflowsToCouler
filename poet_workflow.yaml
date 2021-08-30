@@ -1,3 +1,6 @@
+# The whole workflow for For CMS Open Data Workshop 2021
+# https://github.com/cms-legacydata-analyses/PhysObjectExtractorTool transformed to a workflow
+
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -5,236 +8,235 @@ metadata:
 spec:
   entrypoint: example
   volumes:
-  - name: task-pv-storage
-    persistentVolumeClaim:
-      claimName: nfs-<ID>
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: nfs-<ID>
 
   arguments:
     parameters:
-    - name: processName                                  
-      value: 'DoubleMuParked'
-    - name: firstFile                                  
-      value: 3
-    - name: nFiles                               
-      value: 4
-    - name: nEvents                               
-      value: 1
-    - name: recid
-      value: 6004
-    
+      - name: processName
+        value: "DoubleMuParked"
+      - name: firstFile
+        value: 3
+      - name: nFiles
+        value: 4
+      - name: nEvents
+        value: 1
+      - name: recid
+        value: 6004
 
   templates:
-  - name: example
-    inputs:
-      parameters:
-      - name: processName
-      - name: firstFile
-      - name: nFiles
-      - name: nEvents
-      - name: recid
-    dag:
-      tasks:
-      - name: prepare
-        template: prepare-template
-      - name: write-step
-        dependencies: [prepare]
-        template: write-files-step-template
-        arguments:
-         parameters:
-          - name: firstFile
-            value: "{{inputs.parameters.firstFile}}"
-          - name: nFiles
-            value: "{{inputs.parameters.nFiles}}"
-          - name: recid
-            value: "{{inputs.parameters.recid}}"
-      - name: generate
-        dependencies: [write-step]
-        template: gen-list-template
-        arguments:
-         parameters:
-          - name: firstFile
-            value: "{{inputs.parameters.firstFile}}"
-          - name: nFiles
-            value: "{{inputs.parameters.nFiles}}"
-      - name: scatter-step
-        dependencies: [generate]
-        template: scatter-step-template
-        arguments:
-         parameters:
+    - name: example
+      inputs:
+        parameters:
           - name: processName
-            value: "{{inputs.parameters.processName}}"
+          - name: firstFile
+          - name: nFiles
           - name: nEvents
-            value: "{{inputs.parameters.nEvents}}"
           - name: recid
-            value: "{{inputs.parameters.recid}}"
-          - name: it
-            value: "{{item}}"
-        withParam: "{{tasks.generate.outputs.result}}"
-      - name: merge-step
-        dependencies: [scatter-step]
-        template: merge-step-template
-        arguments:
-         parameters:
+      dag:
+        tasks:
+          - name: prepare
+            template: prepare-template
+          - name: write-step
+            dependencies: [prepare]
+            template: write-files-step-template
+            arguments:
+              parameters:
+                - name: firstFile
+                  value: "{{inputs.parameters.firstFile}}"
+                - name: nFiles
+                  value: "{{inputs.parameters.nFiles}}"
+                - name: recid
+                  value: "{{inputs.parameters.recid}}"
+          - name: generate
+            dependencies: [write-step]
+            template: gen-list-template
+            arguments:
+              parameters:
+                - name: firstFile
+                  value: "{{inputs.parameters.firstFile}}"
+                - name: nFiles
+                  value: "{{inputs.parameters.nFiles}}"
+          - name: scatter-step
+            dependencies: [generate]
+            template: scatter-step-template
+            arguments:
+              parameters:
+                - name: processName
+                  value: "{{inputs.parameters.processName}}"
+                - name: nEvents
+                  value: "{{inputs.parameters.nEvents}}"
+                - name: recid
+                  value: "{{inputs.parameters.recid}}"
+                - name: it
+                  value: "{{item}}"
+            withParam: "{{tasks.generate.outputs.result}}"
+          - name: merge-step
+            dependencies: [scatter-step]
+            template: merge-step-template
+            arguments:
+              parameters:
+                - name: processName
+                  value: "{{inputs.parameters.processName}}"
+
+          - name: eventloop-analysis-step
+            dependencies: [merge-step]
+            template: eventloop-analysis-step-template
+
+    # prepare the data directories needed in the workflow steps
+    - name: prepare-template
+      script:
+        image: ubuntu:latest
+        command: [bash]
+        source: |
+          mkdir -p /mnt/vol/data
+          mkdir -p /mnt/vol/code
+          chmod -R 777 /mnt/vol
+        volumeMounts:
+          - name: task-pv-storage
+            mountPath: /mnt/vol
+
+    # get the full list of files and write the files to be processed to a file
+    - name: write-files-step-template
+      inputs:
+        parameters:
+          - name: firstFile
+          - name: nFiles
+          - name: recid
+      script:
+        image: cernopendata/cernopendata-client
+        command: [bash]
+        source: |
+          lastFile=$(( {{inputs.parameters.nFiles}}+{{inputs.parameters.firstFile}} ))
+          realLastFile=$(( $lastFile - 1 ))
+          cernopendata-client get-file-locations --recid {{inputs.parameters.recid}} --protocol xrootd > /mnt/vol/files_{{inputs.parameters.recid}}.txt;
+          sed -n '{{inputs.parameters.firstFile}},'$realLastFile'p;'$lastFile'q' /mnt/vol/files_{{inputs.parameters.recid}}.txt > /mnt/vol/data/scatter_files.txt
+          echo Selected files:
+          cat /mnt/vol/data/scatter_files.txt
+
+        volumeMounts:
+          - name: task-pv-storage
+            mountPath: /mnt/vol
+        resources:
+          limits:
+            memory: 2Gi
+          requests:
+            memory: 1.7Gi
+            cpu: 750m
+
+    # generate the iterator list for the scatter step
+    - name: gen-list-template
+      inputs:
+        parameters:
+          - name: nFiles
+          - name: firstFile
+      script:
+        image: python:alpine3.6
+        command: [python]
+        source: |
+          import json
+          import sys
+          begin = {{inputs.parameters.firstFile}}
+          end = {{inputs.parameters.firstFile}}+{{inputs.parameters.nFiles}}
+          json.dump([i for i in range(begin,end)], sys.stdout)
+
+    # do the processing
+    - name: scatter-step-template
+      inputs:
+        parameters:
+          - name: nEvents
           - name: processName
-            value: "{{inputs.parameters.processName}}"
-          
-      - name: eventloop-analysis-step
-        dependencies: [merge-step]
-        template: eventloop-analysis-step-template
-        
-  # prepare the data directories needed in the workflow steps      
-  - name: prepare-template
-    script:
-      image: ubuntu:latest
-      command: [bash]
-      source: |
-        mkdir -p /mnt/vol/data
-        mkdir -p /mnt/vol/code
-        chmod -R 777 /mnt/vol
-      volumeMounts:
-      - name: task-pv-storage
-        mountPath: /mnt/vol
+          - name: it
+          - name: recid
+      script:
+        image: cmsopendata/cmssw_5_3_32
+        command: [bash]
+        source: |
+          sudo chown $USER /mnt/vol
 
-  # get the full list of files and write the files to be processed to a file
-  - name: write-files-step-template
-    inputs:
-      parameters:
-      - name: firstFile
-      - name: nFiles
-      - name: recid
-    script:
-      image: cernopendata/cernopendata-client
-      command: [bash]
-      source: | 
-        lastFile=$(( {{inputs.parameters.nFiles}}+{{inputs.parameters.firstFile}} ))
-        realLastFile=$(( $lastFile - 1 ))
-        cernopendata-client get-file-locations --recid {{inputs.parameters.recid}} --protocol xrootd > /mnt/vol/files_{{inputs.parameters.recid}}.txt;
-        sed -n '{{inputs.parameters.firstFile}},'$realLastFile'p;'$lastFile'q' /mnt/vol/files_{{inputs.parameters.recid}}.txt > /mnt/vol/data/scatter_files.txt
-        echo Selected files:
-        cat /mnt/vol/data/scatter_files.txt
-        
-      volumeMounts:
-      - name: task-pv-storage
-        mountPath: /mnt/vol
-      resources:
-        limits:
-          memory: 2Gi
-        requests:
-          memory: 1.7Gi
-          cpu: 750m
+          source /opt/cms/entrypoint.sh
+          git clone git://github.com/cms-opendata-workshop/workshop2021-poetpayload-cloud.git
+          cd workshop2021-poetpayload-cloud/PhysObjectExtractor
+          scram b
 
-  # generate the iterator list for the scatter step
-  - name: gen-list-template
-    inputs:
-      parameters:
-      - name: nFiles
-      - name: firstFile
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import json
-        import sys
-        begin = {{inputs.parameters.firstFile}}
-        end = {{inputs.parameters.firstFile}}+{{inputs.parameters.nFiles}}
-        json.dump([i for i in range(begin,end)], sys.stdout)
+          processName="{{inputs.parameters.processName}}"
+          iterator="{{inputs.parameters.it}}"
+          nevent="{{inputs.parameters.nEvents}}"
 
-  # do the processing
-  - name: scatter-step-template
-    inputs:
-      parameters:
-      - name: nEvents
-      - name: processName
-      - name: it
-      - name: recid
-    script:
-      image: cmsopendata/cmssw_5_3_32
-      command: [bash]
-      source: | 
-        sudo chown $USER /mnt/vol
+          varfiles=$(head -$iterator /mnt/vol/files_{{inputs.parameters.recid}}.txt | tail -1)
 
-        source /opt/cms/entrypoint.sh
-        git clone git://github.com/cms-opendata-workshop/workshop2021-poetpayload-cloud.git
-        cd workshop2021-poetpayload-cloud/PhysObjectExtractor
-        scram b
+          mkdir -p /mnt/vol/scatter/$processName
 
-        processName="{{inputs.parameters.processName}}"
-        iterator="{{inputs.parameters.it}}"
-        nevent="{{inputs.parameters.nEvents}}"
-        
-        varfiles=$(head -$iterator /mnt/vol/files_{{inputs.parameters.recid}}.txt | tail -1)
+          sed -i "s,root://eospublic.cern.ch//eos/opendata/cms/Run2012B/DoubleMuParked/AOD/22Jan2013-v1/10000/1EC938EF-ABEC-E211-94E0-90E6BA442F24.root,$varfiles,g" python/poet_cfg_cloud.py
+          sed -i "s,int32(200,int32($nevent,g" python/poet_cfg_cloud.py
 
-        mkdir -p /mnt/vol/scatter/$processName
+          cmsRun python/poet_cfg_cloud.py True True
 
-        sed -i "s,root://eospublic.cern.ch//eos/opendata/cms/Run2012B/DoubleMuParked/AOD/22Jan2013-v1/10000/1EC938EF-ABEC-E211-94E0-90E6BA442F24.root,$varfiles,g" python/poet_cfg_cloud.py
-        sed -i "s,int32(200,int32($nevent,g" python/poet_cfg_cloud.py
-        
-        cmsRun python/poet_cfg_cloud.py True True
-        
-        mv myoutput.root /mnt/vol/scatter/$processName/myoutput$iterator.root
+          mv myoutput.root /mnt/vol/scatter/$processName/myoutput$iterator.root
 
-        cp cloud/merge_job_cloud.py /mnt/vol/code
-        cp test/EventLoopAnalysisTemplate.cxx /mnt/vol/code
+          cp cloud/merge_job_cloud.py /mnt/vol/code
+          cp test/EventLoopAnalysisTemplate.cxx /mnt/vol/code
 
-      volumeMounts:
-      - name: task-pv-storage
-        mountPath: /mnt/vol
-      resources:
-        limits:
-          memory: 2Gi
-        requests:
-          memory: 1.7Gi
-          cpu: 750m
-  
-  # merge the files from the scatter steps to a single file
-  - name: merge-step-template
-    inputs:
-      parameters:
-      - name: processName
-    script:
-      image: rootproject/root:latest
-      command: [bash]
-      source: | 
-        processName="{{inputs.parameters.processName}}"
-        rm -f /mnt/vol/poetoutput.root
-        hadd -f /mnt/vol/poetoutput.root /mnt/vol/scatter/$processName/myoutput*.root
-        
-        # cd /mnt/vol
-        # python3 /mnt/vol/code/merge_job_cloud.py /mnt/vol/scatter/$processName
+        volumeMounts:
+          - name: task-pv-storage
+            mountPath: /mnt/vol
+        resources:
+          limits:
+            memory: 2Gi
+          requests:
+            memory: 1.7Gi
+            cpu: 750m
 
-        rm -rf /mnt/vol/scatter/ # this contains the separated output files, now merged
-        rm -rf /mnt/vol/data  # this contains the list of selected files, it could be used in this step to check that all files have been processed
-        
-      volumeMounts:
-      - name: task-pv-storage
-        mountPath: /mnt/vol
-      resources:
-        limits:
-          memory: 2Gi
-        requests:
-          memory: 1.7Gi
-          cpu: 750m
+    # merge the files from the scatter steps to a single file
+    - name: merge-step-template
+      inputs:
+        parameters:
+          - name: processName
+      script:
+        image: rootproject/root:latest
+        command: [bash]
+        source: |
+          processName="{{inputs.parameters.processName}}"
+          rm -f /mnt/vol/poetoutput.root
+          hadd -f /mnt/vol/poetoutput.root /mnt/vol/scatter/$processName/myoutput*.root
 
-  # prepare some histograms to check the merged output file
-  - name: eventloop-analysis-step-template
-    script:
-      image: rootproject/root:latest
-      command: [bash]
-      source: | 
-        \cp -r /mnt/vol/poetoutput.root ./
-        g++ -g -O3 -Wall -Wextra -o EventLoopAnalysis /mnt/vol/code/EventLoopAnalysisTemplate.cxx $(root-config --cflags --libs)
-        ./EventLoopAnalysis
+          # cd /mnt/vol
+          # python3 /mnt/vol/code/merge_job_cloud.py /mnt/vol/scatter/$processName
 
-        mv histograms.root /mnt/vol/histograms.root
-        mv *.pdf /mnt/vol
-        rm -rf /mnt/vol/code
-        
-      volumeMounts:
-      - name: task-pv-storage
-        mountPath: /mnt/vol
-      resources:
-        limits:
-          memory: 2Gi
-        requests:
-          memory: 1.7Gi
-          cpu: 750m
+          rm -rf /mnt/vol/scatter/ # this contains the separated output files, now merged
+          rm -rf /mnt/vol/data  # this contains the list of selected files, it could be used in this step to check that all files have been processed
+
+        volumeMounts:
+          - name: task-pv-storage
+            mountPath: /mnt/vol
+        resources:
+          limits:
+            memory: 2Gi
+          requests:
+            memory: 1.7Gi
+            cpu: 750m
+
+    # prepare some histograms to check the merged output file
+    - name: eventloop-analysis-step-template
+      script:
+        image: rootproject/root:latest
+        command: [bash]
+        source: |
+          \cp -r /mnt/vol/poetoutput.root ./
+          g++ -g -O3 -Wall -Wextra -o EventLoopAnalysis /mnt/vol/code/EventLoopAnalysisTemplate.cxx $(root-config --cflags --libs)
+          ./EventLoopAnalysis
+
+          mv histograms.root /mnt/vol/histograms.root
+          mv *.pdf /mnt/vol
+          rm -rf /mnt/vol/code
+
+        volumeMounts:
+          - name: task-pv-storage
+            mountPath: /mnt/vol
+        resources:
+          limits:
+            memory: 2Gi
+          requests:
+            memory: 1.7Gi
+            cpu: 750m

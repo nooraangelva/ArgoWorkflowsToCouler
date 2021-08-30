@@ -1,3 +1,7 @@
+# Task: https://github.com/cms-dpoa/cms-dpoa-getting-started/issues/78
+# Argo version:
+# retrieves files from cernopendata-client and and sorts them out
+
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -10,27 +14,26 @@ spec:
         path: /mnt/data
         type: DirectoryOrCreate
   templates:
-  - name: cernopendata-client
-    steps :
-    - - name: cernopendata-client-get-files          
-        template: get-files-step-template
+    - name: cernopendata-client
+      steps:
+        - - name: cernopendata-client-get-files
+            template: get-files-step-template
 
-    - - name: handle-files
-        template: write-files-step-template
+        - - name: handle-files
+            template: write-files-step-template
 
-  - name: get-files-step-template
-    script:
+    - name: get-files-step-template
+      script:
         image: cernopendata/cernopendata-client
         command: [bash]
         source: |
-            cernopendata-client get-file-locations --recid  6010 --verbose > /mnt/vol/files_6010.txt
+          cernopendata-client get-file-locations --recid  6010 --verbose > /mnt/vol/files_6010.txt
         volumeMounts:
-        - name: cernvol
-          mountPath: /mnt/vol
+          - name: cernvol
+            mountPath: /mnt/vol
 
-
-  - name: write-files-step-template
-    script:
+    - name: write-files-step-template
+      script:
         image: python:alpine3.6
         command: [python]
         source: |
@@ -52,7 +55,7 @@ spec:
           f.close()
 
           # splits list that contains file sizes to 5 equaly sized lists (does not mess up the order)
-          
+
           #print(sum(size))
           #print(len(size))
           z = 0
@@ -111,7 +114,5 @@ spec:
           #f = open("/mnt/vol/files_6010_0.txt", "r")
           #print(f.read())
         volumeMounts:
-        - name: cernvol
-          mountPath: /mnt/vol
-
-  
+          - name: cernvol
+            mountPath: /mnt/vol

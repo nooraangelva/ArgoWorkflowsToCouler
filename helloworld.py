@@ -1,9 +1,11 @@
+# echos hello world
+
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 
 couler.run_container(
     image="docker/whalesay",
-    command=["cowsay"], 
+    command=["cowsay"],
     args=["hello world"]
 )
 

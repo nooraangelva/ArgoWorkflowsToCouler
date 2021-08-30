@@ -1,14 +1,18 @@
+# simple example on the usage of conditionals (if else)
+# couler.when(couler.equal(x,y) lambda: function())
+
 import couler.argo as couler
 from couler.argo_submitter import ArgoSubmitter
 
+
 def should_print():
     return "false"
+
 
 def print_hello():
     return couler.run_container(
         image="alpine:3.6", command=["sh", "-c", 'echo "it was true"']
     )
-
 
 
 result = should_print()

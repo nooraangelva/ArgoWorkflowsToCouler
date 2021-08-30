@@ -1,5 +1,6 @@
 # Example on continue-on-fail, where the workflow will continue running even
 # some steps fail.
+
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:

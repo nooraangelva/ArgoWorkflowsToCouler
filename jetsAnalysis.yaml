@@ -1,3 +1,7 @@
+# https://gitlab.cern.ch/nangelva/reana-demo-JetMETAnalysis to a workflow
+# Argo version:
+# workflow fails on step apply-l1
+
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
@@ -5,732 +9,1155 @@ metadata:
 spec:
   entrypoint: boss
   volumeClaimTemplates:
-  - metadata:
-      name: workdir
-    spec:
-      accessModes: ["ReadWriteMany"]
-      resources:
-        requests:
-          storage: 10Gi
+    - metadata:
+        name: workdir
+      spec:
+        accessModes: ["ReadWriteMany"]
+        resources:
+          requests:
+            storage: 10Gi
   volumes:
-  - name: cloud-pass
-  - name: secret-pw
-    secret:
-      secretName: adelina
-    
+    - name: cloud-pass
+    - name: secret-pw
+      secret:
+        secretName: adelina
 
+  # inputs
   arguments:
     parameters:
-    - name: sampleid                                    
-      value: "JME-RunIISummer19UL18DIGI-00012" 
-    - name: PU-dist-data                                   
-      value: "/home/cmsusr/input/PileupHistogram-goldenJSON-13tev-2018-69200ub-100bins.root"
-    - name: PU-dist-mc
-      value: "/mnt/vol/MyMCPileupHistogram.root"
-    - name: algo
-      value: "AK"
-    - name: cone_size
-      value: "4"
-    - name: jet_type
-      value: "PFchs"
-    - name: PU-1
-      value: "FlatPU/JRA_101.root"
-    - name: PU-2
-      value: "FlatPU/JRA_102.root"
-    - name: noPU-1
-      value: "EpsilonPU/JRA_1.root"
-    - name: noPU-2
-      value: "EpsilonPU/JRA_10.root"
-    - name: PU-output
-      value: "/mnt/vol/lumi_file_PU.txt"
-    - name: noPU-output
-      value: "/mnt/vol/lumi_file_noPU.txt"
-    - name: lumi-match-file
-      value: "/mnt/vol/Matchedfiles.txt"
-    - name: batch_size
-      value: "10"
-    - name: era
-      value: "REANA"
-    - name: output_file
-      value: "/mnt/vol/JRA_jecl1.root"
-    - name: output_merged
-      value: "/mnt/vol/merged.root"
-    
-
-    
+      - name: sampleid
+        value: "JME-RunIISummer19UL18DIGI-00012"
+      - name: PU-dist-data
+        value: "/home/cmsusr/input/PileupHistogram-goldenJSON-13tev-2018-69200ub-100bins.root"
+      - name: PU-dist-mc
+        value: "/mnt/vol/MyMCPileupHistogram.root"
+      - name: algo
+        value: "AK"
+      - name: cone_size
+        value: "4"
+      - name: jet_type
+        value: "PFchs"
+      - name: PU-1
+        value: "/eos/user/a/adlintul/REANA/RunIISummer19UL18/FlatPU/JRA_101.root"
+      - name: PU-2
+        value: "/eos/user/a/adlintul/REANA/RunIISummer19UL18/FlatPU/JRA_102.root"
+      - name: noPU-1
+        value: "/eos/user/a/adlintul/REANA/RunIISummer19UL18/EpsilonPU/JRA_1.root"
+      - name: noPU-2
+        value: "/eos/user/a/adlintul/REANA/RunIISummer19UL18/EpsilonPU/JRA_10.root"
+      - name: PU-output
+        value: "/mnt/vol/lumi_file_PU.txt"
+      - name: noPU-output
+        value: "/mnt/vol/lumi_file_noPU.txt"
+      - name: lumi-match-file
+        value: "/mnt/vol/Matchedfiles.txt"
+      - name: batch_size
+        value: "1"
+      - name: era
+        value: "REANA"
+      - name: output_file
+        value: "/mnt/vol/JRA_jecl1.root"
+      - name: output_merged
+        value: "/mnt/vol/merged.root"
+      - name: varFileNoPU
+        value: "/mnt/vol/filesNoPU.txt"
+      - name: varFilePU
+        value: "/mnt/vol/filesPU.txt"
+      - name: eos_path
+        value: "/eos/user/a/adlintul/REANA/RunIISummer19UL18/L2_FitFuction_runs/$REANA_WORKFLOW_UUID"
+      - name: fit_function
+        value: "standard"
+      - name: l2l3_output_file
+        value: "/mnt/vol/L2Relative.txt"
+      - name: levels
+        value: "1 2"
+      - name: closure_output_file
+        value: "/mnt/vol/Closure.root"
+      - name: versions
+        value: "Summer19UL18_V2_MC"
+      - name: l1_corr
+        value: "L1FastJet.txt"
+      - name: dependent
+        value: "all"
+      - name: fix_pt
+        value: "30 100 300"
+      - name: fix_rho
+        value: "20 40 60"
+      - name: fix_eta
+        value: "0 1.5 2.3 3.0"
+      - name: levels_closure
+        value: "L1FastJet L2Relative"
 
   templates:
-  - name: boss
-    inputs:
-      parameters:
-      - name: sampleid
-      - name: PU-dist-data
-      - name: PU-dist-mc
-      - name: algo
-      - name: cone_size
-      - name: jet_type
-      - name: PU-1
-      - name: PU-2
-      - name: PU-output
-      - name: noPU-output
-      - name: noPU-1 
-      - name: noPU-2 
-      - name: lumi-match-file
-      - name: batch_size
-      - name: era
-      - name: output_merged
-      - name: output_file
-    dag:
-      tasks:
-      - name: get-conditions-name
-        template: get-conditions-template
-        arguments:
-          parameters:
-          - name: sampleid
-            value: "{{inputs.parameters.sampleid}}"
-
-      - name: create-PU-dist
-        dependencies: [get-conditions-name]
-        template: create-PU-dist-template
-        arguments:
-          parameters:
-          - name: PU-dist-data
-            value: "{{inputs.parameters.PU-dist-data}}"
-          - name: PU-dist-mc
-            value: "{{inputs.parameters.PU-dist-mc}}"
-
-      - name: reana-access
-        dependencies: [create-PU-dist]
-        template: reana-access-template
-
-      - name: produce-ntuple-PU
-        dependencies: [reana-access]
-        template: produce-ntuple-list-lumi-template
-        arguments:
-          parameters:
-          - name: para1
-            value: "{{inputs.parameters.PU-1}}"
-          - name: para2
-            value: "{{inputs.parameters.PU-2}}"
-          - name: output
-            value: "{{inputs.parameters.PU-output}}"
-          - name: algo
-            value: "{{inputs.parameters.algo}}"
-          - name: cone_size
-            value: "{{inputs.parameters.cone_size}}"
-          - name: jet_type
-            value: "{{inputs.parameters.jet_type}}"
-
-      - name: produce-ntuple-noPU
-        dependencies: [reana-access]
-        template: produce-ntuple-list-lumi-template
-        arguments:
-          parameters:
-          - name: para1
-            value: "{{inputs.parameters.noPU-1}}"
-          - name: para2
-            value: "{{inputs.parameters.noPU-2}}"
-          - name: output
-            value: "{{inputs.parameters.noPU-output}}"
-          - name: algo
-            value: "{{inputs.parameters.algo}}"
-          - name: cone_size
-            value: "{{inputs.parameters.cone_size}}"
-          - name: jet_type
-            value: "{{inputs.parameters.jet_type}}"
-
-      - name: match-lumi
-        dependencies: [produce-ntuple-noPU, produce-ntuple-PU]
-        template: produce-ntuple-match-lumi-template
-        arguments:
-          parameters:
-          - name: lumi_file_noPU
-            value: "{{inputs.parameters.noPU-output}}"
-          - name: lumi_file_PU
-            value: "{{inputs.parameters.PU-output}}"
-          - name: output_file
-            value: "{{inputs.parameters.lumi-match-file}}"
-          - name: batch_size
-            value: "{{inputs.parameters.batch_size}}"
-
-      - name: generate-scatter
-        dependencies: [match-lumi]
-        template: generate-scatter-template
-        arguments:
-          parameters:
-          - name: file
-            value: "{{inputs.parameters.lumi-match-file}}"
-
-      - name: match-jets
-        dependencies: [generate-scatter]
-        template: produce-ntuple-match-jets-template
-        arguments:
-          parameters:
-          - name: algo
-            value: "{{inputs.parameters.algo}}"
-          - name: cone_size
-            value: "{{inputs.parameters.cone_size}}"
-          - name: jet_type
-            value: "{{inputs.parameters.jet_type}}"
-          - name: input_file
-            value: "{{inputs.parameters.lumi-match-file}}"
-          - name: batch_size
-            value: "{{inputs.parameters.batch_size}}"
-          - name: it
-            value: "{{item}}"
-          - name: PU-dist-data
-            value: "{{inputs.parameters.PU-dist-data}}"
-          - name: PU-dist-mc
-            value: "{{inputs.parameters.PU-dist-mc}}"
-        withParam: "{{tasks.generate-scatter.outputs.result}}"
-
-      - name: compute-l1
-        dependencies: [match-jets]
-        template: compute-l1-template
-        arguments:
-          parameters:
-          - name: algo
-            value: "{{inputs.parameters.algo}}"
-          - name: cone_size
-            value: "{{inputs.parameters.cone_size}}"
-          - name: jet_type
-            value: "{{inputs.parameters.jet_type}}"
-          - name: input_file
-            value: "{{inputs.parameters.lumi-match-file}}"
-          - name: batch_size
-            value: "{{inputs.parameters.batch_size}}"
-          - name: it
-            value: "{{item}}"
-          - name: era
-            value: "{{inputs.parameters.era}}"
-     
-      # - name: generate-scatter-part-2
-      #   dependencies: [compute-l1]
-      #   template: generate-scatter-template
-      #   arguments:
-      #     parameters:
-      #     - name: file
-      #       value: "{{inputs.parameters.lumi-match-file}}"
-
-      - name: apply-l1-part-1
-        dependencies: [compute-l1]
-        template: apply-l1-template
-        arguments:
-          parameters:
-          - name: output_merged
-            Value: "{{inputs.parameters.output_merged}}"
-          - name: output_file
-            value: "{{inputs.parameters.output_file}}"
-          - name: algo
-            value: "{{inputs.parameters.algo}}"
-          - name: cone_size
-            value: "{{inputs.parameters.cone_size}}"
-          - name: jet_type
-            value: "{{inputs.parameters.jet_type}}"
-          - name: input_file
-            value: "{{inputs.parameters.PU-1}}"
-          - name: batch_size
-            value: "{{inputs.parameters.batch_size}}"
-          # - name: it
-          #   value: "{{item}}"
-          - name: era
-            value: "{{inputs.parameters.era}}"
-          #withParam: "{{tasks.generate-scatter-part-2.outputs.result}}"
-
-      - name: apply-l1-part-2
-        dependencies: [compute-l1]
-        template: apply-l1-template
-        arguments:
-          parameters:
-          - name: output_merged
-            Value: "{{inputs.parameters.output_merged}}"
-          - name: output_file
-            value: "{{inputs.parameters.output_file}}"
-          - name: algo
-            value: "{{inputs.parameters.algo}}"
-          - name: cone_size
-            value: "{{inputs.parameters.cone_size}}"
-          - name: jet_type
-            value: "{{inputs.parameters.jet_type}}"
-          - name: input_file
-            value: "{{inputs.parameters.PU-2}}"
-          - name: batch_size
-            value: "{{inputs.parameters.batch_size}}"
-          # - name: it
-          #   value: "{{item}}"
-          - name: era
-            value: "{{inputs.parameters.era}}"
-          # withParam: "{{tasks.generate-scatter-part-2.outputs.result}}"
-
-
-      # - name: histogram
-      #   dependencies: [apply_l1]
-      #   template: histogram-template
-      #   arguments:
-      #     parameters:
-      #     - name: algo
-      #       value: "{{inputs.parameters.algo}}"
-      #     - name: cone_size
-      #       value: "{{inputs.parameters.cone_size}}"
-      #     - name: jet_type
-      #       value: "{{inputs.parameters.jet_type}}"
-      #     - name: input_file
-      #       value: "{{inputs.parameters.lumi-match-file}}"
-      #     - name: batch_size
-      #       value: "{{inputs.parameters.batch_size}}"
-      #     - name: it
-      #       value: "{{item}}"
-      #     - name: era
-      #       value: "{{inputs.parameters.era}}"
-
-      # - name: compute_l2l3
-      #   dependencies: [histogram]
-      #   template: compute_l2l3-template
-      #   arguments:
-      #     parameters:
-      #     - name: algo
-      #       value: "{{inputs.parameters.algo}}"
-      #     - name: cone_size
-      #       value: "{{inputs.parameters.cone_size}}"
-      #     - name: jet_type
-      #       value: "{{inputs.parameters.jet_type}}"
-      #     - name: input_file
-      #       value: "{{inputs.parameters.lumi-match-file}}"
-      #     - name: batch_size
-      #       value: "{{inputs.parameters.batch_size}}"
-      #     - name: it
-      #       value: "{{item}}"
-      #     - name: era
-      #       value: "{{inputs.parameters.era}}"
-
-
-
-  - name: get-conditions-template
-    inputs:
+    - name: boss
+      inputs:
         parameters:
-        - name: sampleid
-    script:
-      image: peterevans/curl-jq
-      command: [sh]
-      source: | 
-        curl_command="curl https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get/{{inputs.parameters.sampleid}} -k --silent"
-        eval $curl_command | jq ".results.sequences[].pileup" | sed s/'"'/''/g > /mnt/vol/pileup.txt
-        eval $curl_command | jq ".results.sequences[].conditions" | sed s/'"'/''/g > /mnt/vol/conditions.txt
-        eval $curl_command | jq ".results.cmssw_release" | sed s/'"'/''/g > /mnt/vol/release.txt
-        echo -n "Pileup: "
-        cat /mnt/vol/pileup.txt
-        echo -n "Conditions: "
-        cat /mnt/vol/conditions.txt
-        echo -n "CMSSW release: "
-        cat /mnt/vol/release.txt
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
+          - name: levels
+          - name: levels_closure
+          - name: closure_output_file
+          - name: eos_path
+          - name: fit_function
+          - name: l2l3_output_file
+          - name: sampleid
+          - name: PU-dist-data
+          - name: PU-dist-mc
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: PU-1
+          - name: PU-2
+          - name: PU-output
+          - name: noPU-output
+          - name: noPU-1
+          - name: noPU-2
+          - name: lumi-match-file
+          - name: batch_size
+          - name: era
+          - name: output_merged
+          - name: output_file
+          - name: varFileNoPU
+          - name: varFilePU
+          - name: versions
+          - name: l1_corr
+          - name: dependent
+          - name: fix_pt
+          - name: fix_rho
+          - name: fix_eta
 
-  - name: create-PU-dist-template
-    inputs:
-      parameters:
-      - name: PU-dist-data
-      - name: PU-dist-mc
-    script:
-      image: nooraangelva/cmssw:10_6_12-argo-v2
-      command: [bash]
-      source: |
-        source /opt/cms/cmsset_default.sh
-        cd $HOME/CMSSW_10_6_12/src
-        eval `scramv1 runtime -sh`
+      # steps order and their templates
+      dag:
+        tasks:
+          - name: get-conditions-name
+            template: get-conditions-template
+            arguments:
+              parameters:
+                - name: sampleid
+                  value: "{{inputs.parameters.sampleid}}"
 
-        python makeMCPileupHist.py SimGeneral.MixingModule.mix_$(cat /mnt/vol/pileup.txt)_cfi --outputFilename {{inputs.parameters.PU-dist-mc}}
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
+          - name: create-PU-dist
+            dependencies: [get-conditions-name]
+            template: create-PU-dist-template
+            arguments:
+              parameters:
+                - name: PU-dist-data
+                  value: "{{inputs.parameters.PU-dist-data}}"
+                - name: PU-dist-mc
+                  value: "{{inputs.parameters.PU-dist-mc}}"
 
-  - name: reana-access-template
-    script:
-      image: nooraangelva/reana-auth-krb5
-      command: [bash]
-      source: | 
-        kinit -k -t /secret/mountpath/.keytab nangelva@CERN.CH 
-        id
-        klist
-        ls -l /tmp/krb5cc_1000
-        cp /tmp/krb5cc_1000 /mnt/vol
+          - name: reana-access
+            dependencies: [create-PU-dist]
+            template: reana-access-template
 
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          - name: produce-ntuple-PU
+            dependencies: [reana-access]
+            template: produce-ntuple-list-lumi-template
+            arguments:
+              parameters:
+                - name: para1
+                  value: "{{inputs.parameters.PU-1}}"
+                - name: para2
+                  value: "{{inputs.parameters.PU-2}}"
+                - name: output
+                  value: "{{inputs.parameters.PU-output}}"
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: varFile
+                  value: "{{inputs.parameters.varFilePU}}"
 
-  - name: produce-ntuple-list-lumi-template
-    inputs:
-      parameters:
-      - name: algo
-      - name: cone_size
-      - name: jet_type
-      - name: para1
-      - name: para2
-      - name: output
-    script:
-      image: nooraangelva/cmssw:10_6_12-argo-v2
-      command: [bash]
-      source: | 
-        mount_vol_files=/mnt/vol/files.txt
-        echo 'root://eosuser.cern.ch//eos/user/a/adlintul/REANA/RunIISummer19UL18/'{{inputs.parameters.para1}} > $mount_vol_files
-        echo 'root://eosuser.cern.ch//eos/user/a/adlintul/REANA/RunIISummer19UL18/'{{inputs.parameters.para2}} >> $mount_vol_files
-      
-        cp /mnt/vol/krb5cc_1000 /tmp
-        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+          - name: produce-ntuple-noPU
+            dependencies: [reana-access]
+            template: produce-ntuple-list-lumi-template
+            arguments:
+              parameters:
+                - name: para1
+                  value: "{{inputs.parameters.noPU-1}}"
+                - name: para2
+                  value: "{{inputs.parameters.noPU-2}}"
+                - name: output
+                  value: "{{inputs.parameters.noPU-output}}"
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: varFile
+                  value: "{{inputs.parameters.varFileNoPU}}"
 
-        source /opt/cms/cmsset_default.sh
-        cd $HOME/CMSSW_10_6_12/src
-        eval `scramv1 runtime -sh`
-        
-        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+          - name: match-lumi
+            dependencies: [produce-ntuple-noPU, produce-ntuple-PU]
+            template: produce-ntuple-match-lumi-template
+            arguments:
+              parameters:
+                - name: lumi_file_noPU
+                  value: "{{inputs.parameters.noPU-output}}"
+                - name: lumi_file_PU
+                  value: "{{inputs.parameters.PU-output}}"
+                - name: output_file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
 
-        for i in $(cat $mount_vol_files); do
-          ./RunListRunLumi $i $algorithm >> {{inputs.parameters.output}};
-        done
-        #cat {{inputs.parameters.output}}
-  
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          - name: generate-scatter
+            dependencies: [match-lumi]
+            template: generate-scatter-template
+            arguments:
+              parameters:
+                - name: file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: scatterVersion
+                  value: 1
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
 
-  - name: produce-ntuple-match-lumi-template
-    inputs:
-      parameters:
-      - name: lumi_file_noPU
-      - name: lumi_file_PU
-      - name: output_file
-      - name: batch_size
+          - name: match-jets
+            dependencies: [generate-scatter]
+            template: produce-ntuple-match-jets-template
+            arguments:
+              parameters:
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: input_file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: it
+                  value: "{{item}}"
+                - name: PU-dist-data
+                  value: "{{inputs.parameters.PU-dist-data}}"
+                - name: PU-dist-mc
+                  value: "{{inputs.parameters.PU-dist-mc}}"
+            withParam: "{{tasks.generate-scatter.outputs.result}}"
 
-    script:
-      image: nooraangelva/cmssw:10_6_12-argo-v2
-      command: [bash]
-      source: | 
-        cp /mnt/vol/krb5cc_1000 /tmp
-        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+          - name: compute-l1
+            dependencies: [match-jets]
+            template: compute-l1-template
+            arguments:
+              parameters:
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: input_file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: it
+                  value: "{{item}}"
+                - name: era
+                  value: "{{inputs.parameters.era}}"
 
-        source /opt/cms/cmsset_default.sh
-        cd $HOME/CMSSW_10_6_12/src
-        eval `scramv1 runtime -sh`
+          - name: generate-scatter-part-2
+            dependencies: [compute-l1]
+            template: generate-scatter-template
+            arguments:
+              parameters:
+                - name: file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: scatterVersion
+                  value: 2
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
 
-        cat {{inputs.parameters.lumi_file_noPU}} {{inputs.parameters.lumi_file_PU}} | ./RunMatchFiles > MatchedFiles
-        echo 'MatchedFiles:' > {{inputs.parameters.output_file}}
-        ./RunPrepareMatching MatchedFiles {{inputs.parameters.batch_size}} >> {{inputs.parameters.output_file}}
-        cat {{inputs.parameters.output_file}}
+          - name: scatter-2
+            dependencies: [generate-scatter-part-2]
+            template: scatter-2-template
+            arguments:
+              parameters:
+                - name: output_merged
+                  Value: "{{inputs.parameters.output_merged}}"
+                - name: output_file
+                  value: "{{inputs.parameters.output_file}}"
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: input_file_PU
+                  value: "{{inputs.parameters.PU-1}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: it
+                  value: "{{item}}"
+                - name: era
+                  value: "{{inputs.parameters.era}}"
+                - name: input_file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: PU-dist-data
+                  value: "{{inputs.parameters.PU-dist-data}}"
+                - name: PU-dist-mc
+                  value: "{{inputs.parameters.PU-dist-mc}}"
+            withParam: "{{tasks.generate-scatter-part-2.outputs.result}}"
 
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          - name: compute-l2l3
+            dependencies: [scatter-2]
+            template: compute-l2l3-template
+            arguments:
+              parameters:
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: input_file
+                  value: "{{inputs.parameters.lumi-match-file}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: era
+                  value: "{{inputs.parameters.era}}"
+                - name: eos_path
+                  value: "{{inputs.parameters.eos_path}}"
+                - name: fit_function
+                  value: "{{inputs.parameters.fit_function}}"
+                - name: l2l3_output_file
+                  value: "{{inputs.parameters.l2l3_output_file}}"
 
-  - name: generate-scatter-template
-    inputs:
-      parameters:
-      - name: file
-    script:
-      image: django:latest
-      command: [python]
-      source: |
-        import json
-        import sys
-        
-        
-        with open("{{inputs.parameters.file}}", 'r') as f:
-          out = f.readlines()
+          - name: generate-scatter-part-3
+            dependencies: [compute-l2l3]
+            template: generate-scatter-template
+            arguments:
+              parameters:
+                - name: file
+                  value: ".apply_l1"
+                - name: scatterVersion
+                  value: 3
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+
+          - name: closure
+            dependencies: [generate-scatter-part-3]
+            template: closure-template
+            arguments:
+              parameters:
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: levels
+                  value: "{{inputs.parameters.levels}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: era
+                  value: "{{inputs.parameters.era}}"
+                - name: l2l3_corr
+                  value: "{{inputs.parameters.l2l3_output_file}}"
+                - name: l1_corr
+                  value: "L1FastJet.txt"
+                - name: closure_output_file
+                  value: "{{inputs.parameters.closure_output_file}}"
+                - name: PU-dist-data
+                  value: "{{inputs.parameters.PU-dist-data}}"
+                - name: PU-dist-mc
+                  value: "{{inputs.parameters.PU-dist-mc}}"
+                - name: index
+                  value: "{{item}}"
+            withParam: "{{tasks.generate-scatter-part-3.outputs.result}}"
+
+          - name: plot-closure
+            dependencies: [closure]
+            template: plot-closure-template
+            arguments:
+              parameters:
+                - name: fit_function
+                  value: "{{inputs.parameters.fit_function}}"
+                - name: eos_path
+                  value: "{{inputs.parameters.eos_path}}"
+                - name: closure_plot_input_file
+                  value: "{{inputs.parameters.closure_output_file}}"
+
+          - name: plot-comparison
+            dependencies: [plot-closure]
+            template: plot-comparison-template
+            arguments:
+              parameters:
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: era
+                  value: "{{inputs.parameters.era}}"
+                - name: eos_path
+                  value: "{{inputs.parameters.eos_path}}"
+                - name: fit_function
+                  value: "{{inputs.parameters.fit_function}}"
+                - name: l2l3_corr
+                  value: "{{inputs.parameters.l2l3_output_file}}"
+                - name: versions
+                  value: "{{inputs.parameters.versions}}"
+                - name: l1_corr
+                  value: "{{inputs.parameters.l1_corr}}"
+                - name: levels
+                  value: "{{inputs.parameters.levels_closure}}"
+                - name: dependent
+                  value: "{{inputs.parameters.dependent}}"
+                - name: fix_pt
+                  value: "{{inputs.parameters.fix_pt}}"
+                - name: fix_rho
+                  value: "{{inputs.parameters.fix_rho}}"
+                - name: fix_eta
+                  value: "{{inputs.parameters.fix_eta}}"
+
+    # scatters own several step plot for steps and templates
+    # Workflow fails on apply-l1
+    - name: scatter-2-template
+      inputs:
+        parameters:
+          - name: output_merged
+          - name: output_file
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: input_file_PU
+          - name: batch_size
+          - name: it
+          - name: era
+          - name: input_file
+          - name: PU-dist-data
+          - name: PU-dist-mc
+      dag:
+        tasks:
+          - name: apply-l1
+            template: apply-l1-template
+            arguments:
+              parameters:
+                - name: output_merged
+                  Value: "{{inputs.parameters.output_merged}}"
+                - name: output_file
+                  value: "{{inputs.parameters.output_file}}"
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: input_file_PU
+                  value: "{{inputs.parameters.input_file_PU}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: it
+                  value: "{{item}}"
+                - name: era
+                  value: "{{inputs.parameters.era}}"
+
+          - name: histogram
+            dependencies: [apply-l1]
+            template: histogram-template
+            arguments:
+              parameters:
+                - name: algo
+                  value: "{{inputs.parameters.algo}}"
+                - name: cone_size
+                  value: "{{inputs.parameters.cone_size}}"
+                - name: jet_type
+                  value: "{{inputs.parameters.jet_type}}"
+                - name: input_file
+                  value: "{{inputs.parameters.input_file}}"
+                - name: batch_size
+                  value: "{{inputs.parameters.batch_size}}"
+                - name: it
+                  value: "{{item}}"
+                - name: PU-dist-data
+                  value: "{{inputs.parameters.PU-dist-data}}"
+                - name: PU-dist-mc
+                  value: "{{inputs.parameters.PU-dist-mc}}"
+
+    # Templates
+    - name: get-conditions-template
+      inputs:
+        parameters:
+          - name: sampleid
+      script:
+        image: peterevans/curl-jq
+        command: [sh]
+        source: |
+          curl_command="curl https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get/{{inputs.parameters.sampleid}} -k --silent"
+          eval $curl_command | jq ".results.sequences[].pileup" | sed s/'"'/''/g > /mnt/vol/pileup.txt
+          eval $curl_command | jq ".results.sequences[].conditions" | sed s/'"'/''/g > /mnt/vol/conditions.txt
+          eval $curl_command | jq ".results.cmssw_release" | sed s/'"'/''/g > /mnt/vol/release.txt
+          echo -n "Pileup: "
+          cat /mnt/vol/pileup.txt
+          echo -n "Conditions: "
+          cat /mnt/vol/conditions.txt
+          echo -n "CMSSW release: "
+          cat /mnt/vol/release.txt
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+
+    - name: create-PU-dist-template
+      inputs:
+        parameters:
+          - name: PU-dist-data
+          - name: PU-dist-mc
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
+
+          python makeMCPileupHist.py SimGeneral.MixingModule.mix_$(cat /mnt/vol/pileup.txt)_cfi --outputFilename {{inputs.parameters.PU-dist-mc}}
+          echo -n "PU-dist created."
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+
+    - name: reana-access-template
+      script:
+        image: nooraangelva/reana-auth-krb5
+        command: [bash]
+        source: |
+          echo "Encoded keytab: $keytab"
+          echo $keytab | base64 -d > /mnt/vol/.keytab
+          kinit -k -t /mnt/vol/.keytab nangelva@CERN.CH
+
+          # secret in volume version:
+          #kinit -k -t /secret/mountpath/.keytab nangelva@CERN.CH 
+          id
+          klist
+          ls -l /tmp/krb5cc_1000
+          cp /tmp/krb5cc_1000 /mnt/vol
+          echo -n "Using secret keytab succeeded"
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
+        env:
+          - name: keytab
+            valueFrom:
+              secretKeyRef:
+                name: encodedadelina
+                key: .keytab_encoded
+
+    - name: produce-ntuple-list-lumi-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: para1
+          - name: para2
+          - name: varFile
+          - name: output
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          echo {{inputs.parameters.varFile}}
+
+          mount_vol_files={{inputs.parameters.varFile}}
+          echo 'root://eosuser.cern.ch/'{{inputs.parameters.para1}} > $mount_vol_files
+          echo 'root://eosuser.cern.ch/'{{inputs.parameters.para2}} >> $mount_vol_files
+
+          #cat {{inputs.parameters.varFile}}
+
+          cp /mnt/vol/krb5cc_1000 /tmp
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
+
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+
+          for i in $(cat $mount_vol_files); do
+            ./RunListRunLumi $i $algorithm >> {{inputs.parameters.output}};
+          done
+
+          #cat {{inputs.parameters.output}}
+          ls -a /mnt/vol/
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
+
+    - name: produce-ntuple-match-lumi-template
+      inputs:
+        parameters:
+          - name: lumi_file_noPU
+          - name: lumi_file_PU
+          - name: output_file
+          - name: batch_size
+
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
+
+          cat {{inputs.parameters.lumi_file_noPU}} {{inputs.parameters.lumi_file_PU}} | ./RunMatchFiles > MatchedFiles
+          echo 'MatchedFiles:' > {{inputs.parameters.output_file}}
+          ./RunPrepareMatching MatchedFiles {{inputs.parameters.batch_size}} >> {{inputs.parameters.output_file}}
+          cat {{inputs.parameters.output_file}}
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
+
+    - name: generate-scatter-template
+      inputs:
+        parameters:
+          - name: file
+          - name: scatterVersion
+          - name: batch_size
+      script:
+        image: django:latest
+        command: [python]
+        source: |
+          import json
+          import sys
+          import os
+          import fnmatch
 
 
-        ekstra1, files, ekstra2 = str(out).split('"')
-        list = files.replace("t:r", "t;r").split(" ")
+          with open("{{inputs.parameters.file}}", 'r') as f:
+            out = f.readlines()
 
-        y = 0
-        for x in list:
-          file = open("/mnt/vol/Matchedfiles_"+str(y)+".txt", "w")
-          file.write(str(x))
-          file.close()
-          y += 1
+          if {{inputs.parameters.scatterVersion}} == 1:
+            y = -1
+            for x in out:
+              if y > -1:
+                list = x.replace("t:r", "t;r")
+                ekstra1, line, ekstra2 = str(list).split('"')
+                file = open("/mnt/vol/Matchedfiles_"+str(y)+".txt", "w")
+                file.write(line)
+                file.close()
+              y += 1
 
-        json.dump([i for i in range(len(list))], sys.stdout)
+            json.dump([i for i in range(len(out)-1)], sys.stdout)
 
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          else:
+            if {{inputs.parameters.scatterVersion}} == 3:
 
-  - name: produce-ntuple-match-jets-template
-    inputs:
-      parameters:
-      - name: algo
-      - name: cone_size
-      - name: jet_type
-      - name: input_file
-      - name: batch_size
-      - name: it
-      - name: PU-dist-data
-      - name: PU-dist-mc
-    script:
-      image: nooraangelva/cmssw:10_6_12-argo-v2
-      command: [bash]
-      source: | 
-        cp /mnt/vol/krb5cc_1000 /tmp
-        #sudo ls -a /mnt/vol
-        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+              dir = "/mnt/vol"
+              scatter = len(fnmatch.filter(os.listdir(dir),"{{inputs.parameters.file}}"))
+              json.dump([i for i in range(int(scatter))], sys.stdout)
 
-        source /opt/cms/cmsset_default.sh
-        cd $HOME/CMSSW_10_6_12/src
-        eval `scramv1 runtime -sh`
+            else:
+              scatter = 2 / {{inputs.parameters.batch_size}}
+              json.dump([i for i in range(int(scatter))], sys.stdout)
 
-        echo "INFO | Starting to hadd.."
-        
-        #NoPUFile=$(echo $NoPUFile | tr ':' ' ')
-        #PUFile=$(echo $PUFile | tr ':' ' ')
-        IFS=';'
-        read -r NoPUFile PUFile </mnt/vol/Matchedfiles_{{inputs.parameters.it}}.txt
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
 
-        echo $NoPUFile
-        echo $PUFile
+    - name: produce-ntuple-match-jets-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: input_file
+          - name: batch_size
+          - name: it
+          - name: PU-dist-data
+          - name: PU-dist-mc
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
 
-        nopu_files="$NoPUFile"
-        pu_files="$PUFile"
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
 
-        hadd -f -k -n 5 NoPUFile.root $nopu_files
-        hadd -f -k -n 5 PUFile.root $pu_files
+          echo "INFO | Starting to hadd.."
 
+          cat /mnt/vol/Matchedfiles_{{inputs.parameters.it}}.txt
+          #IFS=';'
+          read -r NoPUFile PUFile </mnt/vol/Matchedfiles_{{inputs.parameters.it}}.txt
 
-        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+          echo "files before truncate:"
+          echo "No NoPU: $NoPUFile"
+          echo "No PU: $PUFile"
 
-        jet_synchtest_x \
-          -basepath '//' \
-          -samplePU PUFile.root \
-          -sampleNoPU NoPUFile.root \
-          -algo1 $algorithm \
-          -algo2 $algorithm \
-          -iftest false \
-          -maxEvts 10000000 \
-          -ApplyJEC false \
-          -outputPath ./ \
-          -npvRhoNpuBinWidth 10 \
-          -NBinsNpvRhoNpu 6 \
-          -MCPUReWeighting {{inputs.parameters.PU-dist-mc}} \
-          -MCPUHistoName pileup \
-          -DataPUReWeighting {{inputs.parameters.PU-dist-data}} \
-          -useweight true \
-          -nrefmax 3 \
-          -doNotSave true
+          NoPUFile=$(echo $NoPUFile | tr ';' ' ')
+          PUFile=$(echo $PUFile | tr ';' ' ')
 
-        mv output_ak4pfchs.root /mnt/vol/Matchedjets.root
+          echo "files after truncate:"
+          echo "No NoPU: $NoPUFile"
+          echo "No PU: $PUFile"
 
-        rm NoPUFile.root
-        rm PUFile.root
+          nopu_files="$NoPUFile"
+          pu_files="$PUFile"
 
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          hadd -f -k -n 5 NoPUFile.root $nopu_files
+          hadd -f -k -n 5 PUFile.root $pu_files
 
 
-  - name: compute-l1-template
-    inputs:
-      parameters:
-      - name: algo
-      - name: cone_size
-      - name: jet_type
-      - name: input_file
-      - name: era
-      - name: it
-    script:
-      image: nooraangelva/cmssw:10_6_12-argo-v2
-      command: [bash]
-      source: | 
-        cp /mnt/vol/krb5cc_1000 /tmp
-        #sudo ls -a /mnt/vol
-        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
 
-        source /opt/cms/cmsset_default.sh
-        cd $HOME/CMSSW_10_6_12/src
-        eval `scramv1 runtime -sh`
+          jet_synchtest_x \
+            -basepath '//' \
+            -samplePU PUFile.root \
+            -sampleNoPU NoPUFile.root \
+            -algo1 $algorithm \
+            -algo2 $algorithm \
+            -iftest false \
+            -maxEvts 10000000 \
+            -ApplyJEC false \
+            -outputPath ./ \
+            -npvRhoNpuBinWidth 10 \
+            -NBinsNpvRhoNpu 6 \
+            -MCPUReWeighting {{inputs.parameters.PU-dist-mc}} \
+            -MCPUHistoName pileup \
+            -DataPUReWeighting {{inputs.parameters.PU-dist-data}} \
+            -useweight true \
+            -nrefmax 3 \
+            -doNotSave true
 
-        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
-        merge=output_$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]').root
+          cat ./output_*.root >> /mnt/vol/Matchedjets.root
+          rm NoPUFile.root
+          rm PUFile.root
 
-        hadd -k -f -n 5 /mnt/vol/$merge /mnt/vol/Matchedjets.root
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
 
-        jet_synchfit_x \
-          -inputDir /mnt/vol/ \
-          -outputDir /mnt/vol/ \
-          -algo1 $algorithm \
-          -algo2 $algorithm \
-          -highPU false \
-          -useNPU false \
-          -functionType standard \
-          -era {{inputs.parameters.era}}PreDeriveL1
+    - name: compute-l1-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: input_file
+          - name: era
+          - name: it
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
 
-        ls -a /mnt/vol/
-        root -b -q -l `printf "deriveL1.C+(\"/mnt/vol/\",\"$algorithm\",\"{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}\",\"{{inputs.parameters.era}}\")"`
-        mv *.txt /mnt/vol/
-        ls -a /mnt/vol/
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
 
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+          merge=output_$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]').root
 
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          hadd -k -f -n 5 /mnt/vol/$merge /mnt/vol/Matchedjets.root
 
-  - name: apply-l1-template
-    inputs:
-      parameters:
-      - name: algo
-      - name: cone_size
-      - name: jet_type
-      - name: input_file
-      - name: era
-      - name: output_file
-      - name: output_merged
-    script:
-      image: nooraangelva/cmssw:10_6_12-argo-v2
-      command: [bash]
-      source: | 
-        cp /mnt/vol/krb5cc_1000 /tmp
-        #sudo ls -a /mnt/vol
-        KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+          jet_synchfit_x \
+            -inputDir /mnt/vol/ \
+            -outputDir /mnt/vol/ \
+            -algo1 $algorithm \
+            -algo2 $algorithm \
+            -highPU false \
+            -useNPU false \
+            -functionType standard \
+            -era {{inputs.parameters.era}}PreDeriveL1
 
-        source /opt/cms/cmsset_default.sh
-        cd $HOME/CMSSW_10_6_12/src
-        eval `scramv1 runtime -sh`
+          ls -a /mnt/vol/
+          root -b -q -l `printf "deriveL1.C+(\"/mnt/vol/\",\"$algorithm\",\"{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}\",\"{{inputs.parameters.era}}\")"`
+          mv *.txt /mnt/vol/
+          ls -a /mnt/vol/
 
-        #cat /mnt/vol/L1FastJet.txt
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
 
-        cp /mnt/vol/L1FastJet.txt {{inputs.parameters.era}}_L1FastJet_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
+    - name: apply-l1-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: input_file_PU
+          - name: era
+          - name: output_file
+          - name: output_merged
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
 
-        algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
 
-        hadd -k -f -n 5  {{inputs.parameters.output_merged}} root://eosuser.cern.ch//eos/user/a/adlintul/REANA/RunIISummer19UL18/{{inputs.parameters.input_file}}
+          #cat /mnt/vol/L1FastJet.txt
 
-        jet_apply_jec_x \
-          -input {{inputs.parameters.output_merged}} \
-          -output {{inputs.parameters.output_file}} \
-          -jecpath $PWD \
-          -era {{inputs.parameters.era}} \
-          -levels 1 \
-          -algs $algorithm \
-          -L1FastJet true \
-          -saveitree false
-        
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-      - name: secret-pw     # mount file containing secret at /secret/mountpath
-        mountPath: "/secret/mountpath"
+          cp /mnt/vol/L1FastJet.txt {{inputs.parameters.era}}_L1FastJet_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
 
-  # - name: histogram-template
-  #   inputs:
-  #     parameters:
-  #     - name: algo
-  #     - name: cone_size
-  #     - name: jet_type
-  #     - name: input_file
-  #     - name: era
-  #     - name: it
-  #   script:
-  #     image: nooraangelva/cmssw:10_6_12-argo-v2
-  #     command: [bash]
-  #     source: | 
-  #       cp /mnt/vol/krb5cc_1000 /tmp
-  #       #sudo ls -a /mnt/vol
-  #       KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
 
-  #       source /opt/cms/cmsset_default.sh
-  #       cd $HOME/CMSSW_10_6_12/src
-  #       eval `scramv1 runtime -sh`
+          hadd -k -f -n 5  {{inputs.parameters.output_merged}} root://eosuser.cern.ch{{inputs.parameters.input_file_PU}}
 
-  #       algorithm=$(echo {algo}{cone_size}{jet_type} | tr '[:upper:]' '[:lower:]')l1:0.2
+          jet_apply_jec_x \
+            -input {{inputs.parameters.output_merged}} \
+            -output {{inputs.parameters.output_file}} \
+            -jecpath $PWD \
+            -era {{inputs.parameters.era}} \
+            -levels 1 \
+            -algs $algorithm \
+            -L1FastJet true \
+            -saveitree false
 
-  #       jet_response_analyzer_x JetMETAnalysis/JetAnalyzers/config/jra_dr_finebinning.config \
-  #         -input {input_file} \
-  #         -nbinsabsrsp 0 \
-  #         -nbinsetarsp 0 \
-  #         -nbinsphirsp 0 \
-  #         -nbinsrelrsp 200 \
-  #         -doflavor false \
-  #         -flavorDefinition phys \
-  #         -MCPUReWeighting {PU_dist_mc} \
-  #         -MCPUHistoName pileup \
-  #         -DataPUReWeighting {PU_dist_data} \
-  #         -DataPUHistoName pileup \
-  #         -output {output_file} \
-  #         -useweight true \
-  #         -nrefmax 3 \
-  #         -algs $algorithm \
-  #         -relrspmin 0.0 \
-  #         -relrspmax 2.0
+          ls -a /mnt/vol/
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
 
-        
-  #     volumeMounts:
-  #     - name: workdir
-  #       mountPath: /mnt/vol
-  #     - name: secret-pw     # mount file containing secret at /secret/mountpath
-  #       mountPath: "/secret/mountpath"
+    - name: histogram-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: input_file
+          - name: PU-dist-data
+          - name: PU-dist-mc
+          - name: it
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
 
-  # - name: compute_l2l3-template
-  #   inputs:
-  #     parameters:
-  #     - name: algo
-  #     - name: cone_size
-  #     - name: jet_type
-  #     - name: input_file
-  #     - name: era
-  #     - name: it
-  #   script:
-  #     image: nooraangelva/cmssw:10_6_12-argo-v2
-  #     command: [bash]
-  #     source: | 
-  #       cp /mnt/vol/krb5cc_1000 /tmp
-  #       #sudo ls -a /mnt/vol
-  #       KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
 
-  #       source /opt/cms/cmsset_default.sh
-  #       cd $HOME/CMSSW_10_6_12/src
-  #       eval `scramv1 runtime -sh`
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')l1:0.2
 
-  #       mkdir -p {eos_path}/{fit_function}/
+          jet_response_analyzer_x JetMETAnalysis/JetAnalyzers/config/jra_dr_finebinning.config \
+            -input /mnt/vol/JRA_jecl1.root \
+            -nbinsabsrsp 0 \
+            -nbinsetarsp 0 \
+            -nbinsphirsp 0 \
+            -nbinsrelrsp 200 \
+            -doflavor false \
+            -flavorDefinition phys \
+            -MCPUReWeighting {{inputs.parameters.PU-dist-mc}} \
+            -MCPUHistoName pileup \
+            -DataPUReWeighting {{inputs.parameters.PU-dist-data}} \
+            -DataPUHistoName pileup \
+            -output /mnt/vol/jra_jecl1.root \
+            -useweight true \
+            -nrefmax 3 \
+            -algs $algorithm \
+            -relrspmin 0.0 \
+            -relrspmax 2.0
 
-  #       hadd -k -f -n 5 {output_path}/Merged.root {input_file}
+          ls -a /mnt/vol/
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
 
-  #       algorithm=$(echo {algo}{cone_size}{jet_type} | tr '[:upper:]' '[:lower:]')l1
+    - name: compute-l2l3-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: input_file
+          - name: era
+          - name: eos_path
+          - name: fit_function
+          - name: l2l3_output_file
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
 
-  #       jet_l2_correction_x \
-  #         -input {output_path}/Merged.root \
-  #         -algs $algorithm \
-  #         -era {era} \
-  #         -output l2.root \
-  #         -outputDir {output_path} \
-  #         -makeCanvasVariable AbsCorVsJetPt:JetEta \
-  #         -formats .png \
-  #         -l2l3 true \
-  #         -batch true \
-  #         -histMet median \
-  #         -delphes false \
-  #         -maxFitIter 30 \
-  #         -l2calofit DynamicMin \
-  #         -l2pffit {fit_function} \
-  #         -ptclipfit true
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
 
-  #       cp {output_path}/{era}*.txt {output_path}/L2Relative.txt
-  #       cp {output_path}/*.png {eos_path}/{fit_function}/
+          sudo mkdir -p {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/
 
+          hadd -k -f -n 5 /mnt/vol/Merged.root /mnt/vol/jra_jecl1.root
 
-        
-  #     volumeMounts:
-  #     - name: workdir
-  #       mountPath: /mnt/vol
-  #     - name: secret-pw     # mount file containing secret at /secret/mountpath
-  #       mountPath: "/secret/mountpath"
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')l1
 
+          jet_l2_correction_x \
+            -input /mnt/vol//Merged.root \
+            -algs $algorithm \
+            -era {{inputs.parameters.era}} \
+            -output l2.root \
+            -outputDir /mnt/vol/ \
+            -makeCanvasVariable AbsCorVsJetPt:JetEta \
+            -formats .png \
+            -l2l3 true \
+            -batch true \
+            -histMet median \
+            -delphes false \
+            -maxFitIter 30 \
+            -l2calofit DynamicMin \
+            -l2pffit {{inputs.parameters.fit_function}} \
+            -ptclipfit true
+
+          ls -a /mnt/vol
+          sudo cp /mnt/vol/{{inputs.parameters.era}}*.txt /mnt/vol/L2Relative.txt
+          sudo cp /mnt/vol/*.png {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
+
+    - name: closure-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: era
+          - name: l1_corr
+          - name: l2l3_corr
+          - name: closure_output_file
+          - name: levels
+          - name: PU-dist-data
+          - name: PU-dist-mc
+          - name: index
+
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
+
+          cp /mnt/vol/{{inputs.parameters.l1_corr}} {{inputs.parameters.era}}_L1FastJet_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
+          cp /mnt/vol/{{inputs.parameters.l2l3_corr}} {{inputs.parameters.era}}_L2Relative_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
+
+          algorithm=$(echo {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} | tr '[:upper:]' '[:lower:]')
+
+          inputFileNamePath=$(echo higher_level{{inputs.parameters.index}}.apply_l1 | rev | cut -d"/" -f2-  | rev)
+          inputFileName=$(echo higher_level{{inputs.parameters.index}}.apply_l1 | rev | cut -d"/" -f1  | rev | cut -d"." -f1)
+
+          jet_correction_analyzer_x \
+            -inputFilename $inputFileName \
+            -inputFilePath $inputFileNamePath \
+            -outputDir /mnt/vol/ \
+            -path $PWD \
+            -era {{inputs.parameters.era}} \
+            -levels {{inputs.parameters.levels}} \
+            -useweight true \
+            -algs $algorithm \
+            -drmax 0.2 \
+            -evtmax 0 \
+            -nbinsrelrsp 200 \
+            -relrspmin 0.0 \
+            -relrspmax 2.0 \
+            -MCPUReWeighting {{inputs.parameters.PU-dist-mc}} \
+            -DataPUReWeighting {{inputs.parameters.PU-dist-data}} \
+            -nrefmax 3
+
+          mv /mnt/vol/Closure_*.root {{inputs.parameters.closure_output_file}}
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
+
+    - name: plot-closure-template
+      inputs:
+        parameters:
+          - name: closure_plot_input_file
+          - name: eos_path
+          - name: fit_function
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
+
+          mkdir -p {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/
+
+          hadd -k -f -n 5 /mnt/vol//Merged.root {{inputs.parameters.closure_plot_input_file}}
+
+          jet_draw_closure_x \
+            -doPt true \
+            -doEta true \
+            -path /mnt/vol \
+            -filename Merged \
+            -basepath /mnt/vol \
+            -histMet median \
+            -outputDir {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/ \
+            -draw_guidelines true \
+            -doRatioPt false \
+            -doRatioEta false
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"
+
+    - name: plot-comparison-template
+      inputs:
+        parameters:
+          - name: algo
+          - name: cone_size
+          - name: jet_type
+          - name: era
+          - name: eos_path
+          - name: fit_function
+          - name: l2l3_corr
+          - name: versions
+          - name: l1_corr
+          - name: levels
+          - name: dependent
+          - name: fix_pt
+          - name: fix_rho
+          - name: fix_eta
+      script:
+        image: nooraangelva/cmssw:10_6_12-argo-v2
+        command: [bash]
+        source: |
+          cp /mnt/vol/krb5cc_1000 /tmp
+          #sudo ls -a /mnt/vol
+          KRB5CCNAME=FILE:/mnt/vol/krb5cc_1000 
+
+          source /opt/cms/cmsset_default.sh
+          cd $HOME/CMSSW_10_6_12/src
+          eval `scramv1 runtime -sh`
+
+          mkdir -p {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/
+
+          mkdir -p JECDatabase/{{inputs.parameters.era}}
+          cp {{inputs.parameters.l1_corr}} JECDatabase/{{inputs.parameters.era}}/{{inputs.parameters.era}}_L1FastJet_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
+          cp {{inputs.parameters.l2l3_corr}} JECDatabase/{{inputs.parameters.era}}/{{inputs.parameters.era}}_L2Relative_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt
+
+          rawPath=https://raw.githubusercontent.com/cms-jet/JECDatabase/master/textFiles
+
+          echo "INFO | Downloading corrections from Github.."
+          for version in {{inputs.parameters.era}} {{inputs.parameters.versions}}; do
+              mkdir -p JECDatabase/$version
+              for level in {{inputs.parameters.levels}}; do
+                  if  wget -q -N $rawPath/$version/$version\_$level\_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt -P JECDatabase/$version; then
+                    echo "INFO |" Downloading $rawPath/$version/$version\_$level\_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt into JECDatabase/$version
+                  elif [ -f JECDatabase/$version/$version\_$level\_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt ]; then
+                    echo "INFO |" $version\_$level\_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt already exist in JECDatabase/$version
+                  else
+                    echo "WARNING |" $version\_$level\_{{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}.txt does not exist in JECDatabase/$version
+                    echo "WARNING | Aborting.."
+                    return
+                  fi 
+              done
+          done
+
+          echo
+
+          versions=$(echo "{{inputs.parameters.era}} {{inputs.parameters.versions}}" | sed -e 's/\s\+/,/g')
+
+          if [[ {{inputs.parameters.dependent}} == *"all"* ]] || [[ {{inputs.parameters.dependent}} == *"Eta"* ]]; then
+            echo "INFO | Computing Eta dependent comparisons.."
+            for pt in {{inputs.parameters.fix_pt}}; do
+                echo "    PT" $pt
+                for rho in {{inputs.parameters.fix_rho}}; do  
+                    echo "      Rho" $rho
+                    for level in {{inputs.parameters.levels}}; do
+                      echo "         Level" $level
+                      ./Execute --Version $versions --Algorithm {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} --Level $level --Dependent Eta --Min -4.18 --Max 5.18 --NBin -1 --FixPT $pt --FixRho $rho >> EtaDependent.txt 
+                    done
+                    python PlotCompareVersions.py --Dependent Eta --Levels {{inputs.parameters.levels}} --Versions {{inputs.parameters.era}} {{inputs.parameters.versions}} --OutputPath {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/ --Algorithm {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}
+                    rm EtaDependent.txt
+                done
+            done
+
+          fi
+
+          if [[ {{inputs.parameters.dependent}} == *"all"* ]] || [[ {{inputs.parameters.dependent}} == *"PT"* ]]; then
+            echo "INFO | Computing PT dependent comparisons.."
+            for eta in {{inputs.parameters.fix_pt}}; do
+                echo "    Eta" $eta
+                for rho in {{inputs.parameters.fix_rho}}; do
+                  echo "      Rho" $rho
+                  for level in {{inputs.parameters.levels}}; do
+                      echo "         Level" $level
+                      ./Execute --Version $versions --Algorithm {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} --Level $level --Dependent PT --Min 1 --Max 7000 --NBin 100 --FixEta $eta --FixRho $rho >> PTDependent.txt
+                  done
+                  python PlotCompareVersions.py --Dependent PT --Levels {{inputs.parameters.levels}} --Versions {{inputs.parameters.era}} {{inputs.parameters.versions}} --OutputPath {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/ --Algorithm {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}
+                  rm PTDependent.txt
+                done
+            done
+          fi
+
+          if [[ {{inputs.parameters.dependent}} == *"all"* ]] || [[ {{inputs.parameters.dependent}} == *"Rho"* ]]; then
+            echo "INFO | Computing Rho dependent comparisons.."
+            for eta in {{inputs.parameters.fix_pt}}; do
+                echo "    Eta" $eta
+                for pt in {{inputs.parameters.fix_pt}}; do
+                  echo "      PT" $pt
+                  for level in {{inputs.parameters.levels}}; do
+                      echo "         Level" $level
+                      ./Execute --Version $versions --Algorithm {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}} --Level $level --Dependent Rho --Min 0 --Max 70 --NBin 50 --FixPT $pt --FixEta $eta >> RhoDependent.txt
+                  done
+                  python PlotCompareVersions.py --Dependent Rho --Levels {{inputs.parameters.levels}} --Versions {{inputs.parameters.era}} {{inputs.parameters.versions}} --OutputPath {{inputs.parameters.eos_path}}/{{inputs.parameters.fit_function}}/ --Algorithm {{inputs.parameters.algo}}{{inputs.parameters.cone_size}}{{inputs.parameters.jet_type}}
+                  rm RhoDependent.txt
+                done
+            done
+          fi
+
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/vol
+          - name: secret-pw # mount file containing secret at /secret/mountpath
+            mountPath: "/secret/mountpath"

@@ -1,8 +1,10 @@
 # ArgoWorkflowsToCouler
-This repository contains Argo workflows changed implemented in a couler format.
+This repository contains Argo workflows implemented in a couler format.
 The original Argo workflows are from [Argo's](https://github.com/argoproj/argo-workflows/tree/master/examples) repository
 
-## Documentation on the journey
+Repository also contains some Argo workflows that are using CERN's opendata.
+
+## Documentation about Argo, Couler, codes and thoughts about them
 [CodiMD](https://codimd.web.cern.ch/UCT5cM_yTsWqM79VLiGnbw?view)
 
 ## Explained .yaml file
@@ -48,13 +50,14 @@ The original Argo workflows are from [Argo's](https://github.com/argoproj/argo-w
 - [Couler-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/file_retrieve.py)
 - [Argo-version](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/file_retrieve.yaml)
 
-## Daemon - basic
-- [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/daemon_basic.py)
+## Secret
+- [Couler - creates also secret](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/secretC.py)
+- [Couler - uses already existing secret](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/secret.py)
+- [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/histogram.yaml)
 
-## Daemon - server (not working problems with how to create server)
-- [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/daemon.py)
-- [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/daemon-nginx.yaml)
 
 ## a way to extract information from a CMS root file type EDM and creating histograms
 - [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/histogram.py)
 - [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/histogram.yaml)
+
+
