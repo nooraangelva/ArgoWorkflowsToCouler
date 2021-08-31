@@ -55,9 +55,17 @@ Repository also contains some Argo workflows that are using CERN's opendata.
 - [Couler - uses already existing secret](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/secret.py)
 - [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/histogram.yaml)
 
-
 ## a way to extract information from a CMS root file type EDM and creating histograms
 - [Couler](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/histogram.py)
 - [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/histogram.yaml)
+
+## Extract information of different physics objects into a ROOT file called myoutput.root. Creates histograms in the end.
+- [Volumes used with the workflow](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/poet_volume.py)
+- [Argo](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/poet_workflow.yaml)
+
+## jetMETAnalysis workflow
+- [Original](https://gitlab.cern.ch/alintulu/reana-demo-JetMETAnalysis)
+- [Couler-in progress](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/jetsAnalysis.py)
+- [Argo-in progress](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/jetsAnalysis.yaml)
 
 
