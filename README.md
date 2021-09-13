@@ -66,6 +66,6 @@ Repository also contains some Argo workflows that are using CERN's opendata.
 ## jetMETAnalysis workflow
 - [Original](https://gitlab.cern.ch/alintulu/reana-demo-JetMETAnalysis)
 - [Couler-in progress](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/jetsAnalysis.py)
-- [Argo-in progress](https://github.com/argoproj/argo-workflows/blob/4e450e250168e6b4d51a126b784e90b11a0162bc/examples/jetsAnalysis.yaml)
+- [Argo-in progress](https://github.com/nooraangelva/ArgoWorkflowsToCouler/blob/main/jetsAnalysis.yaml)
 
 
